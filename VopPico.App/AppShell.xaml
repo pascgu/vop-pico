@@ -4,11 +4,12 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:local="clr-namespace:VopPico.App"
+    xmlns:pages="clr-namespace:VopPico.App.Pages"
     Title="VopPico.App">
 
     <ShellContent
-        Title="Home"
-        ContentTemplate="{DataTemplate local:MainPage}"
-        Route="MainPage" />
+        Title="VoP Pico"
+        ContentTemplate="{DataTemplate pages:PicoPage}"
+        Route="PicoPage" /> <!-- Route="MainPage"  ContentTemplate="{DataTemplate local:MainPage}" -->
 
 </Shell>

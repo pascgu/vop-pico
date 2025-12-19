@@ -13,3 +13,7 @@ A MAUI application with HybridWebView to program and control a Raspberry Pi Pico
 
 - Android: `dotnet run -f net9.0-android`
 - Windows: `dotnet run -f net9.0-windows10.0.19041.0`
+
+## copy frontend from vop-core
+
+in vop-pico dir: `copy-frontend.bat`

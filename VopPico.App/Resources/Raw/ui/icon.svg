@@ -1,0 +1,16 @@
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Trait d'entrée (orange) -->
+  <path d="M0,49 L25,49" stroke="#FF5733" stroke-width="3" fill="none"/>
+
+  <!-- Spline bleue (courbe arrondie vers le coin supérieur gauche) -->
+  <path d="M75,35 C90,35 80,2 99,2" stroke="#3366FF" stroke-width="3" fill="none"/>
+
+  <!-- Spline verte (courbe arrondie comme dans votre exemple) -->
+  <path d="M75,65 C90,65 80,98 99,98" stroke="#33FF57" stroke-width="3" fill="none"/>
+
+  <!-- Rectangle blanc aux bords arrondis -->
+  <rect x="25" y="15" width="50" height="70" rx="5" ry="5" fill="white" stroke="black" stroke-width="2"/>
+
+  <!-- Texte VoP centré -->
+  <text x="50" y="51" font-family="Arial" font-size="24" fill="black" text-anchor="middle" dominant-baseline="middle">VoP</text>
+</svg>

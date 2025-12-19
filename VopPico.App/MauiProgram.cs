@@ -16,6 +16,7 @@ public static class MauiProgram
 			});
 
 #if DEBUG
+        builder.Services.AddHybridWebViewDeveloperTools();
 		builder.Logging.AddDebug();
 #endif
 
