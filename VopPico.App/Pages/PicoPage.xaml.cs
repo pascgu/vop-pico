@@ -7,29 +7,47 @@ public partial class PicoPage : ContentPage
         InitializeComponent();
         hybridWebView.SetInvokeJavaScriptTarget(this);
     }
-
-    private async void OnHybridWebViewRawMessageReceived(object sender, HybridWebViewRawMessageReceivedEventArgs e)
+    
+    public class SyncReturn
     {
-        await DisplayAlert("Raw Message Received", e.Message, "OK");
+        public string? Message { get; set; }
+        public int Value { get; set; }
+    }
+    
+    private async void hybridWebView_RawMessageReceived(object sender, HybridWebViewRawMessageReceivedEventArgs e)
+    {
+        await DisplayAlert("PicoPage Raw Message Received", e.Message, "OK");
+        //Dispatcher.Dispatch(() => editor.Text += Environment.NewLine + e.Message);
     }
 
-    // private void OnRawMessageReceived(object sender, HybridWebViewRawMessageReceivedEventArgs e)
-    // {
-    //     // Traiter les messages du frontend
-    //     var message = e.Message;
-    //     Console.WriteLine($"Message reçu: {message}");
+    public async Task<SyncReturn> DoAsyncWorkParamsReturn(int i, string s)
+    {
+        await DisplayAlert("PicoPage message sending", $"DoAsyncWorkParamsReturn: {i}, {s}","OK");
+        await Task.Delay(1000);
+        return new SyncReturn
+        {
+            Message = "Hello from C#!" + s,
+            Value = i
+        };
+    }
 
-    //     // Désérialiser et traiter
-    //     //var data = JsonSerializer.Deserialize<WorkflowData>(message);
-    //     //ProcessWorkflow(data);
+    
+    public async Task DoAsyncWorkParams(int i, string s)
+    {
+        await DisplayAlert("PicoPage message sending", $"DoAsyncWorkParams: {i}, {s}","OK");
+        await Task.Delay(1000);
+    }
 
-    //     // InvokeJavaScriptAsync
-    //     // EvaluateJavaScriptAsync
-    // }
+    
+    public void SendCodeToDevice(string code)
+    {
+        // Handle the code sent from JavaScript
+        Console.WriteLine($"Received code: {code}");
+    }
 
-    //private void ProcessWorkflow(WorkflowData data)
-    //{
-    //    // Logique métier ici
-    //}
-
+    public string GetDeviceStatus()
+    {
+        // Return the device status
+        return "Device is ready";
+    }
 }

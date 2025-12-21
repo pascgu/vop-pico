@@ -7,9 +7,11 @@ if not exist "%SOURCE%" (
     exit /b 1
 )
 
-if not exist "%DEST%" (
-    mkdir "%DEST%"
+if exist "%DEST%" (
+    rmdir /s /q "%DEST%"
 )
+
+mkdir "%DEST%"
 
 xcopy /E /Y "%SOURCE%\*" "%DEST%"
 

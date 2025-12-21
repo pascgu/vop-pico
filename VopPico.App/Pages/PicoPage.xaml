@@ -7,6 +7,6 @@
         x:Name="hybridWebView"
         HybridRoot="ui"
         DefaultFile="index.html"
-        RawMessageReceived="OnHybridWebViewRawMessageReceived"
+        RawMessageReceived="hybridWebView_RawMessageReceived"
         />
 </ContentPage>
