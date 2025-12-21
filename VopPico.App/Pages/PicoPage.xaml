@@ -6,7 +6,7 @@
     <HybridWebView 
         x:Name="hybridWebView"
         HybridRoot="ui"
-        DefaultFile="index.html"
+        DefaultFile="index-pico.html"
         RawMessageReceived="hybridWebView_RawMessageReceived"
         />
 </ContentPage>

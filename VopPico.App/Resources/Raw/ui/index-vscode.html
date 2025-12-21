@@ -12,37 +12,11 @@
     <link rel="apple-touch-icon" href="/logo192.png" />
     <link rel="manifest" href="/manifest.json" />
     <title>VoP - Diagram Editor</title>
-    <script>
-        function LogMessage(msg) {
-            var messageLog = document.getElementById("messageLog");
-            messageLog.value += '\r\n' + msg;
-        }
-
-        window.addEventListener(
-            "HybridWebViewMessageReceived",
-            function (e) {
-                LogMessage("Raw message PG1: " + e.detail.message);
-            });
-
-        async function InvokeDoAsyncWorkParams() {
-            LogMessage("Invoking DoAsyncWorkParams");
-            await window.HybridWebView.InvokeDotNet('DoAsyncWorkParams', [123, 'hello']);
-            LogMessage("Invoked DoAsyncWorkParams");
-        }
-
-    </script>
     <script type="module" crossorigin src="/assets/index-CCxYqH0D.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-Co0iW9NB.css">
   </head>
-  <body>
+  <body data-app="vscode">
     <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div>
-        <button onclick="window.HybridWebView.SendRawMessage('Message from JS! ' + (count++))">Send message to C#</button>
-        <button onclick="InvokeDoAsyncWorkParams()">Call C# async method (params)</button>
-    </div>
-    <div>
-        Log: <textarea readonly id="messageLog" style="width: 80%; height: 3em;"></textarea>
-    </div>
     <div id="root"></div>
     <!--
       This HTML file is a template.
