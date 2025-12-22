@@ -2,6 +2,19 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "build-vop-core",
+      "type": "shell",
+      "command": "npm run build",
+      "options": {
+        "cwd": "${workspaceFolder:vop-core}/ui"
+      },
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
       "label": "copy-frontend",
       "type": "shell",
       "command": "copy-frontend.bat",
@@ -12,7 +25,7 @@
             "/c"
           ]
         },
-        "cwd": "${workspaceFolder}"
+        "cwd": "${workspaceFolder:vop-pico}"
       },
       "problemMatcher": [],
       "group": {
@@ -21,8 +34,8 @@
       }
     },
     {
-      "label": "cp-front&build",
-      "dependsOn": ["copy-frontend", "maui: Build"],
+      "label": "build-front&cp&build-maui",
+      "dependsOn": ["build-vop-core", "copy-frontend", "maui: Build"],
       "dependsOrder": "sequence",
       "group": {
         "kind": "build",

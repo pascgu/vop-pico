@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": ".",
+			"name": "vop-pico"
+		},
+		{
+			"path": "../vop-core",
+			"name": "vop-core"
+		}
+	],
+	"settings": {}
+}
