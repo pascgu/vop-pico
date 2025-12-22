@@ -8,6 +8,7 @@ if not exist "%SOURCE%" (
 )
 
 if exist "%DEST%" (
+    echo Remove existing files in %DEST%
     rmdir /s /q "%DEST%"
 )
 

@@ -20,23 +20,23 @@ public partial class PicoPage : ContentPage
         //Dispatcher.Dispatch(() => editor.Text += Environment.NewLine + e.Message);
     }
 
-    public async Task<SyncReturn> DoAsyncWorkParamsReturn(int i, string s)
-    {
-        await DisplayAlert("PicoPage message sending", $"DoAsyncWorkParamsReturn: {i}, {s}","OK");
-        await Task.Delay(1000);
-        return new SyncReturn
-        {
-            Message = "Hello from C#!" + s,
-            Value = i
-        };
-    }
+    // public async Task<SyncReturn> DoAsyncWorkParamsReturn(int i, string s)
+    // {
+    //     await DisplayAlert("PicoPage message sending", $"DoAsyncWorkParamsReturn: {i}, {s}","OK");
+    //     await Task.Delay(1000);
+    //     return new SyncReturn
+    //     {
+    //         Message = "Hello from C#!" + s,
+    //         Value = i
+    //     };
+    // }
 
     
-    public async Task DoAsyncWorkParams(int i, string s)
-    {
-        await DisplayAlert("PicoPage message sending", $"DoAsyncWorkParams: {i}, {s}","OK");
-        await Task.Delay(1000);
-    }
+    // public async Task DoAsyncWorkParams(int i, string s)
+    // {
+    //     await DisplayAlert("PicoPage message sending", $"DoAsyncWorkParams: {i}, {s}","OK");
+    //     await Task.Delay(1000);
+    // }
 
     
     public void SendCodeToDevice(string code)
@@ -48,6 +48,6 @@ public partial class PicoPage : ContentPage
     public string GetDeviceStatus()
     {
         // Return the device status
-        return "Device is ready";
+        return "Device is ready 1";
     }
 }
