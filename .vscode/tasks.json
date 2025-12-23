@@ -35,12 +35,17 @@
     },
     {
       "label": "build-front&cp&build-maui",
-      "dependsOn": ["build-vop-core", "copy-frontend", "maui: Build"],
+      "dependsOn": [
+        "build-vop-core",
+        "copy-frontend",
+        "maui: Build"
+      ],
       "dependsOrder": "sequence",
       "group": {
         "kind": "build",
         "isDefault": true
-      }
+      },
+      "problemMatcher": []
     }
   ]
 }

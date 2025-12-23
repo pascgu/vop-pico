@@ -5,10 +5,9 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:local="clr-namespace:VopPico.App"
     xmlns:pages="clr-namespace:VopPico.App.Pages"
-    Title="VopPico.App">
+    Title="VoP Pico">
 
     <ShellContent
-        Title="VoP Pico"
         ContentTemplate="{DataTemplate pages:PicoPage}"
         Route="PicoPage" /> <!-- Route="MainPage"  ContentTemplate="{DataTemplate local:MainPage}" -->
 
