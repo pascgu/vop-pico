@@ -1,6 +1,19 @@
 # VopPico Development Tasks - Next Steps
 
-## Phase 4: MAF Backend Implementation (Business Logic)
+## Additional Tasks
+1. ✅ Implémenter PicoJsInterface et mettre à jour l'objet SetInvokeJavaScriptTarget pour pointer vers cet objet, déplacer les fonctions associées de PicoPage.
+2. ❌ Remplacer toutes les occurrences à workflow par diagram.
+3. ❌ Implémenter saveDiagram. Cela doit download un fichier .json. Il faut passer par une méthode style onSavingDiagram côté backend (à ajouter dans IVopHost) qui ne fait rien pour l'instant dans voppico mais qui pourrai servir de point d'entrée. Cette fonction doit prendre en paramètre le .json et le retourner tel quel pour l'instant.
+4. ❌ Implémenter loadDiagram qui permet d'upload un .json.
+
+## Phase 4: USB OTG & Execution Pipeline
+*Objective: Close the execution loop on the Pico.*
+1. Create and implement the **USB OTG** service (Android-specific logic).
+2. Refine the execution pipeline:
+   * UI (JSON) → **PicoJsInterface** (C#) → **MafWorkflowExecutor** (MAF node execution & tracing) → **MicroPython Generator** (Final conversion) → **USB OTG Service** (Send to Pico).
+3. Validate MicroPython code generation and sending to Pico.
+
+## Phase 5: MAF Backend Implementation (Business Logic)
 *Objective: Set up the execution engine and tracing.*
 1. Install packages: `dotnet add package Microsoft.AgentFramework` and `dotnet add package OpenTelemetry`.
 2. Create the **`MafWorkflowExecutor.cs`** service.
@@ -8,13 +21,6 @@
 4. **Map VoP JSON to MAF** (Agents/Transitions).
 5. Add OpenTelemetry instrumentation to MAF nodes (emit traces).
 6. **Implement the communication channel** (e.g., WebSocket or HTTP endpoint) for the Frontend to receive traces from `OpenTelemetryService.cs`.
-
-## Phase 5: USB OTG & Execution Pipeline
-*Objective: Close the execution loop on the Pico.*
-1. Create and implement the **USB OTG** service (Android-specific logic).
-2. Refine the execution pipeline:
-   * UI (JSON) → **PicoJsInterface** (C#) → **MafWorkflowExecutor** (MAF node execution & tracing) → **MicroPython Generator** (Final conversion) → **USB OTG Service** (Send to Pico).
-3. Validate MicroPython code generation and sending to Pico.
 
 ## Phase 6: Visual Debugging Integration (Slow Motion Mode)
 *Objective: Consume traces to animate the UI.*
