@@ -64,11 +64,33 @@ namespace VopPico.App.Services
             public int Value { get; set; }
         }
 
-        // public class ComputationResult
-        // {
-        //     public double result { get; set; }
-        //     public string? operationName { get; set; }
-        // }
+        // VopFlow methods
+        public async Task LoadVopFlow(string vopFlowData)
+        {
+            // Implement the logic to load a VopFlow
+            Console.WriteLine($"Loading VopFlow: {vopFlowData}");
+            await Task.CompletedTask;
+        }
 
+        public async Task SaveVopFlow()
+        {
+            // Implement the logic to save the current VopFlow
+            Console.WriteLine("Saving VopFlow");
+            await Task.CompletedTask;
+        }
+
+        public async Task ExecuteVopFlow()
+        {
+            // Implement the logic to execute the current VopFlow
+            Console.WriteLine("Executing VopFlow");
+            await Task.CompletedTask;
+        }
+
+        public async Task OnVopFlowExecutionError(string error)
+        {
+            // Implement the logic to handle errors during VopFlow execution
+            Console.WriteLine($"VopFlow execution error: {error}");
+            await Task.CompletedTask;
+        }
     }
 }

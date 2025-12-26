@@ -2,9 +2,9 @@
 
 ## Additional Tasks
 1. ✅ Implémenter PicoJsInterface et mettre à jour l'objet SetInvokeJavaScriptTarget pour pointer vers cet objet, déplacer les fonctions associées de PicoPage.
-2. ❌ Remplacer toutes les occurrences à workflow par diagram.
-3. ❌ Implémenter saveDiagram. Cela doit download un fichier .json. Il faut passer par une méthode style onSavingDiagram côté backend (à ajouter dans IVopHost) qui ne fait rien pour l'instant dans voppico mais qui pourrai servir de point d'entrée. Cette fonction doit prendre en paramètre le .json et le retourner tel quel pour l'instant.
-4. ❌ Implémenter loadDiagram qui permet d'upload un .json.
+2. ✅ Remplacer toutes les occurrences à workflow par vopflow.
+3. ❌ Implémenter saveVopFlow. Cela doit download un fichier .json. Il faut passer par une méthode style onSavingVopFlow côté backend (à ajouter dans IVopHost) qui ne fait rien pour l'instant dans voppico mais qui pourrai servir de point d'entrée. Cette fonction doit prendre en paramètre le .json et le retourner tel quel pour l'instant.
+4. ❌ Implémenter loadVopFlow qui permet d'upload un .json.
 
 ## Phase 4: USB OTG & Execution Pipeline
 *Objective: Close the execution loop on the Pico.*
