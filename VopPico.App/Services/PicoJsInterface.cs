@@ -27,21 +27,32 @@ namespace VopPico.App.Services
             return "Device is ready 2";
         }
 
-        public async Task checkCS2JS()
+        public async Task JSeval()
         {
             try
             {
                 await _picoPage.Dispatcher.DispatchAsync(async () =>
                 {
-                    await Hwv.EvaluateJavaScriptAsync("console.warn('>> CS2JS #1 : log a warning in console')");
-                    Hwv.SendRawMessage($">> CS2JS #2 nb={Count++} : C# send a raw message");
-                    await Hwv.EvaluateJavaScriptAsync("window.HybridWebView.SendRawMessage('>> CS2JS #3 : JS send a raw message');");
-                    await Hwv.EvaluateJavaScriptAsync("window.logMessage('>> CS2JS #4 : call logMessage from C# with eval', 'warning');");
+                    await Hwv.EvaluateJavaScriptAsync("window.logMessage('JSeval: call logMessage from C# with eval');");
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in JSeval: {ex.Message}");
+            }
+        }
+
+        public async Task JSinvoke()
+        {
+            try
+            {
+                await _picoPage.Dispatcher.DispatchAsync(async () =>
+                {
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
                     await Hwv.InvokeJavaScriptAsync<object>(
                         "window.logMessage",
                         null, // use it if no return type (void)
-                        [">> CS2JS #5 : call logMessage from C# with invoke", "error"],
+                        ["JSinvoke: call logMessage from C# with invoke", ""],
                         [VopHybridJSContext.Default.String, VopHybridJSContext.Default.String]
                     );
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
@@ -49,13 +60,38 @@ namespace VopPico.App.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in CS2JS: {ex.Message}");
+                Console.WriteLine($"Error in JSinvoke: {ex.Message}");
+            }
+        }
+
+        public async Task JSraw()
+        {
+            try
+            {
+                await _picoPage.Dispatcher.DispatchAsync(() =>
+                {
+                    Hwv.SendRawMessage($"JSraw : C# send a raw message");
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in JSraw: {ex.Message}");
             }
         }
 
         public async void onHwvRawMessageReceived(object sender, HybridWebViewRawMessageReceivedEventArgs e)
         {
-            await _picoPage.DisplayAlert("Raw Message Received in C#", e.Message, "OK");
+            try
+            {
+                await _picoPage.Dispatcher.DispatchAsync(async () =>
+                {
+                    await _picoPage.DisplayAlert("Raw Message Received in C#", e.Message, "OK");
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in onHwvRawMessageReceived: {ex.Message}");
+            }
         }
 
         public class SyncReturn
