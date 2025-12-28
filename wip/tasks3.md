@@ -3,6 +3,7 @@
 ## Additional Tasks
 1. ✅ Implémenter PicoJsInterface et mettre à jour l'objet SetInvokeJavaScriptTarget pour pointer vers cet objet, déplacer les fonctions associées de PicoPage.
 2. ✅ Remplacer toutes les occurrences à workflow par vopflow.
+2. ✅ Changer 1 seul bouton test CS2JS en 4 distincts et retester / faire fonctionner sur mon tel android.
 3. ❌ Implémenter saveVopFlow. Cela doit download un fichier .json. Il faut passer par une méthode style onSavingVopFlow côté backend (à ajouter dans IVopHost) qui ne fait rien pour l'instant dans voppico mais qui pourrai servir de point d'entrée. Cette fonction doit prendre en paramètre le .json et le retourner tel quel pour l'instant.
 4. ❌ Implémenter loadVopFlow qui permet d'upload un .json.
 
