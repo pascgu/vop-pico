@@ -108,11 +108,12 @@ namespace VopPico.App.Services
             await Task.CompletedTask;
         }
 
-        public async Task SaveVopFlow()
+        public async Task<string> OnSavingVopFlow(object vopFlowData)
         {
-            // Implement the logic to save the current VopFlow
-            Console.WriteLine("Saving VopFlow");
-            await Task.CompletedTask;
+            // Serialize the object to a JSON string with indentation
+            string jsonString = System.Text.Json.JsonSerializer.Serialize(vopFlowData, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            Console.WriteLine("OnSavingVopFlow called with data: " + jsonString);
+            return jsonString;
         }
 
         public async Task ExecuteVopFlow()

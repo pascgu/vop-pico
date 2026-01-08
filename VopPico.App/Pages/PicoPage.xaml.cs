@@ -38,11 +38,6 @@ namespace VopPico.App.Pages
             await picoJsInterface.LoadVopFlow(vopFlowData);
         }
 
-        public async Task SaveVopFlow()
-        {
-            await picoJsInterface.SaveVopFlow();
-        }
-
         public async Task ExecuteVopFlow()
         {
             await picoJsInterface.ExecuteVopFlow();
