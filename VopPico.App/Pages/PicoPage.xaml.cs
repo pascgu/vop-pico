@@ -32,12 +32,6 @@ namespace VopPico.App.Pages
             picoJsInterface.onHwvRawMessageReceived(sender, e);
         }
 
-        // Add methods to handle VopFlow operations
-        public async Task LoadVopFlow(string vopFlowData)
-        {
-            await picoJsInterface.LoadVopFlow(vopFlowData);
-        }
-
         public async Task ExecuteVopFlow()
         {
             await picoJsInterface.ExecuteVopFlow();

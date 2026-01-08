@@ -1,5 +1,6 @@
 using VopPico.App.Pages;
 using static VopPico.App.Pages.PicoPage;
+using VopPico.App.Models;
 
 namespace VopPico.App.Services
 {
@@ -101,19 +102,91 @@ namespace VopPico.App.Services
         }
 
         // VopFlow methods
-        public async Task LoadVopFlow(string vopFlowData)
+        private bool ValidateVopFlow(string vopFlowJson, out VopFlow? vopFlow, out string errorMessage)
         {
-            // Implement the logic to load a VopFlow
-            Console.WriteLine($"Loading VopFlow: {vopFlowData}");
-            await Task.CompletedTask;
+            try
+            {
+                vopFlow = System.Text.Json.JsonSerializer.Deserialize<VopFlow>(vopFlowJson);
+                if (vopFlow == null)
+                {
+                    errorMessage = "Invalid VopFlow JSON";
+                    return false;
+                }
+
+                if (string.IsNullOrEmpty(vopFlow.version) ||
+                    string.IsNullOrEmpty(vopFlow.name) ||
+                    vopFlow.nodes == null ||
+                    vopFlow.edges == null ||
+                    vopFlow.metadata == null)
+                {
+                    vopFlow = null;
+                    errorMessage = "Missing required fields in VopFlow";
+                    return false;
+                }
+
+                errorMessage = string.Empty;
+                return true;
+            }
+            catch (System.Text.Json.JsonException ex)
+            {
+                vopFlow = null;
+                errorMessage = $"JSON parsing error: {ex.Message}";
+                return false;
+            }
         }
 
-        public async Task<string> OnSavingVopFlow(object vopFlowData)
+        public async Task<string> OnLoadingVopFlow(string vopFlowJson)
         {
-            // Serialize the object to a JSON string with indentation
-            string jsonString = System.Text.Json.JsonSerializer.Serialize(vopFlowData, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
-            Console.WriteLine("OnSavingVopFlow called with data: " + jsonString);
-            return jsonString;
+            if (!ValidateVopFlow(vopFlowJson, out VopFlow? vopFlow, out string errorMessage))
+            {
+                return errorMessage;
+            }
+
+            try
+            {
+                if (vopFlow == null)
+                {
+                    return "Failed to deserialize VopFlow";
+                }
+
+                // Serialize the object to a JSON string with indentation
+                string jsonString = System.Text.Json.JsonSerializer.Serialize(vopFlow, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+                Console.WriteLine("OnLoadingVopFlow called with data: " + jsonString);
+                await Task.CompletedTask;
+                return jsonString;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in OnLoadingVopFlow: {ex.Message}");
+                return $"Error processing VopFlow data: {ex.Message}";
+            }
+        }
+
+        public async Task<string> OnSavingVopFlow(string vopFlowJson)
+        {
+            if (!ValidateVopFlow(vopFlowJson, out VopFlow? vopFlow, out string errorMessage))
+            {
+                return errorMessage;
+            }
+
+            try
+            {
+                if (vopFlow == null)
+                {
+                    return "Failed to deserialize VopFlow";
+                }
+
+                // Serialize the object to a JSON string with indentation
+                string jsonString = System.Text.Json.JsonSerializer.Serialize(vopFlow, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+                Console.WriteLine("OnSavingVopFlow called with data: " + jsonString);
+                await Task.CompletedTask;
+                return jsonString;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in OnSavingVopFlow: {ex.Message}");
+                return $"Error processing VopFlow data: {ex.Message}";
+            }
         }
 
         public async Task ExecuteVopFlow()
