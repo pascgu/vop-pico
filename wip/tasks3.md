@@ -6,7 +6,7 @@
 2. ✅ Changer 1 seul bouton test CS2JS en 4 distincts et retester / faire fonctionner sur mon tel android.
 3. ✅ Implémenter saveVopFlow. Cela doit download un fichier .json. Il faut passer par une méthode style onSavingVopFlow côté backend (à ajouter dans IVopHost) qui ne fait rien pour l'instant dans voppico mais qui pourrai servir de point d'entrée. Cette fonction doit prendre en paramètre le .json et le retourner tel quel pour l'instant.
 4. ✅ Implémenter loadVopFlow qui permet d'upload un .json.
-5. ❌ Créer un vopFlow (le .json) de test pour exécuter un vrai programme de base sur le pico (faire clignoter une led).
+5. ✅ Créer un vopFlow (le .json) de test pour exécuter un vrai programme de base sur le pico (faire clignoter une led).
 
 ## Phase 4: USB OTG & Execution Pipeline
 *Objective: Close the execution loop on the Pico.*
