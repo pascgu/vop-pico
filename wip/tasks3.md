@@ -9,14 +9,17 @@
 5. ✅ Créer un vopFlow (le .json) de test pour exécuter un vrai programme de base sur le pico (faire clignoter une led).
 
 ## Phase 4: USB OTG & Execution Pipeline
-*Objective: Close the execution loop on the Pico.*
-1. Create and implement the **USB OTG** service (Android-specific logic).
-2. Refine the execution pipeline:
-   * UI (JSON) → **PicoJsInterface** (C#) → **MafWorkflowExecutor** (MAF node execution & tracing) → **MicroPython Generator** (Final conversion) → **USB OTG Service** (Send to Pico).
-3. Validate MicroPython code generation and sending to Pico.
+*Objective: Convert the VopFlow JSON file into MicroPython commands and execute them sequentially via USB.*
+
+1. ✅ Implement serial port listing and selection.
+2. Monitor and display messages sent by the Pico on the serial port and display them with logMessage.
+3. Convert VopFlow to MicroPython commands.
+4. Execute commands via USB.
+5. Validate MicroPython code generation and sending to Pico.
 
 ## Phase 5: MAF Backend Implementation (Business Logic)
 *Objective: Set up the execution engine and tracing.*
+
 1. Install packages: `dotnet add package Microsoft.AgentFramework` and `dotnet add package OpenTelemetry`.
 2. Create the **`MafWorkflowExecutor.cs`** service.
 3. **Implement OpenTelemetry Tracing** in `OpenTelemetryService.cs` to collect traces.
@@ -26,6 +29,7 @@
 
 ## Phase 6: Visual Debugging Integration (Slow Motion Mode)
 *Objective: Consume traces to animate the UI.*
+
 1. In the frontend (ReactFlow), implement a **WebSocket/HTTP client** to connect to the trace channel from Phase 4.
 2. Develop OpenTelemetry event listeners (NodeStarted/NodeCompleted/DataFlow).
 3. Implement node animation (color/marker) based on received events (the "Slow Motion Mode").

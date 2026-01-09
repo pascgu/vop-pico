@@ -1,6 +1,7 @@
 using VopPico.App.Pages;
 using static VopPico.App.Pages.PicoPage;
 using VopPico.App.Models;
+using System.IO.Ports;
 
 namespace VopPico.App.Services
 {
@@ -9,6 +10,7 @@ namespace VopPico.App.Services
         private readonly PicoPage _picoPage;
         private HybridWebView Hwv { get => _picoPage.HybridWebView; }
         public int Count { get; set; }
+        private List<string> previousPorts = new List<string>();
 
         public PicoJsInterface(PicoPage picoPage)
         {
@@ -201,6 +203,47 @@ namespace VopPico.App.Services
             // Implement the logic to handle errors during VopFlow execution
             Console.WriteLine($"VopFlow execution error: {error}");
             await Task.CompletedTask;
+        }
+
+        public async Task<List<string>> ListSerialPorts()
+        {
+            var currentPorts = new List<string>();
+            var resultPorts = new List<string>();
+            try
+            {
+                foreach (var port in SerialPort.GetPortNames())
+                {
+                    var portDetails = "";
+                    if (previousPorts.Count > 0 && !previousPorts.Contains(port))
+                        portDetails = " (new)";
+                    currentPorts.Add(port);
+                    resultPorts.Add($"{port}{portDetails}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error listing serial ports: {ex.Message}");
+            }
+
+            previousPorts = currentPorts;
+            await Task.CompletedTask;
+            return resultPorts;
+        }
+
+        public async Task<string> SelectSerialPort(string portName)
+        {
+            try
+            {
+                // Implement logic to select the serial port
+                Console.WriteLine($"Selected serial port: {portName}");
+                await Task.CompletedTask;
+                return portName;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error selecting serial port: {ex.Message}");
+                return "";
+            }
         }
     }
 }
