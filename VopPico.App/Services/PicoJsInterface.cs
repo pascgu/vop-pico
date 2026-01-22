@@ -441,109 +441,14 @@ public class PicoJsInterface
         }, token);
     }
 
-    private void StartSerialMonitoringOLD()
-    {
-#if ANDROID
-        if (_serialConnection == null) return;
-
-        _cts?.Cancel(); // Security: cancel previous task
-        _cts = new CancellationTokenSource();
-        CancellationToken token = _cts.Token;
-        Task.Run(async () =>
-        {
-            try
-            {
-                while (!token.IsCancellationRequested)
-                {
-                    string? fragment = _serialConnection?.Read();
-                    if (!string.IsNullOrEmpty(fragment))
-                    {
-                        _receiveBuffer += fragment;
-
-                        // Check if we have at least one complete line (\n)
-                        while (_receiveBuffer.Contains("\n"))
-                        {
-                            int lineEndIndex = _receiveBuffer.IndexOf("\n");
-                            string completeLine = _receiveBuffer.Substring(0, lineEndIndex + 1).Trim();
-                            
-                            // Send the complete line to the frontend
-                            if (!string.IsNullOrEmpty(completeLine))
-                            {
-                                SendDataReceived(completeLine);
-                            }
-
-                            // keep the rest in the buffer
-                            _receiveBuffer = _receiveBuffer.Substring(lineEndIndex + 1);
-                        }
-
-                        // Special case for MicroPython prompt ">>> " which has no \n
-                        if (_receiveBuffer == ">>> ")
-                        {
-                            SendDataReceived(_receiveBuffer);
-                            _receiveBuffer = string.Empty;
-                        }
-                    }
-                    await Task.Delay(20, token);
-                }
-
-            }
-            catch (System.OperationCanceledException) { /* Normal stop */ }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error monitoring serial messages: {ex.Message}");
-                SendLogMessage($"Error monitoring serial connection: {ex.Message}", LogMessageType.error);
-                SendLogMessage($"Stack trace: {ex.StackTrace}", LogMessageType.error);
-            }
-        }, token);
-
-#else
-        if (_serialPort == null || !_serialPort.IsOpen) return;
-
-        _serialPort.ErrorReceived += (sender, e) =>
-        {
-            Console.WriteLine($"Serial port error: {e.EventType}");
-        };
-
-        _serialPort.DataReceived += (sender, e) =>
-        {
-            try
-            {
-                Console.WriteLine("serial port new data received");
-                do
-                {
-                    string? message = null;
-                    try
-                    {
-                        message = _serialPort.ReadLine();
-                    }
-                    catch (TimeoutException)
-                    {
-                        // if no \r\n found after 1sec, read all available bytes
-                        if (_serialPort.BytesToRead > 0)
-                            message = _serialPort.ReadExisting();
-                    }
-                    if (!string.IsNullOrEmpty(message))
-                    {
-                        SendDataReceived(message);
-                    }
-                }
-                while (_serialPort.BytesToRead > 0);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error reading from serial port: {ex.Message}");
-            }
-        };
-#endif
-    }
-
     public void CloseSerialConnection()
     {
         try 
         {
-#if ANDROID
             _cts?.Cancel();
             _cts?.Dispose();
+            _cts = null;
+#if ANDROID
             _serialConnection?.Close();
             _serialConnection = null;
 #else
@@ -601,7 +506,10 @@ public class PicoJsInterface
             _picoPage.Dispatcher.DispatchAsync(async () =>
             {
                 Console.WriteLine($"Sending log message to JS: {message}");
-                string encodedMessage = HttpUtility.JavaScriptStringEncode(message);
+                string encodedMessage = message;
+#if !ANDROID
+                encodedMessage = HttpUtility.JavaScriptStringEncode(message);
+#endif
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
                 await Hwv.InvokeJavaScriptAsync<object>(
                     "window.logMessage",
