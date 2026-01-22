@@ -3,7 +3,6 @@ using static VopPico.App.Pages.PicoPage;
 using VopPico.App.Models;
 using System.Web;
 
-
 #if ANDROID
 using Android.App;
 using Android.OS;
@@ -14,462 +13,490 @@ using VopPico.App.Platforms.Android.Usb;
 using System.IO.Ports; // works at least with windows
 #endif
 
-namespace VopPico.App.Services
+namespace VopPico.App.Services;
+
+public class PicoJsInterface
 {
-    public class PicoJsInterface
+    private readonly PicoPage _picoPage;
+    private HybridWebView Hwv { get => _picoPage.HybridWebView; }
+    public int Count { get; set; }
+    private List<string> previousPorts = new List<string>();
+#if ANDROID
+    private AndroidSerial? _serialConnection;
+    private Thread? _monitoringThread;
+    private bool _monitoringActive = false;
+#else
+    private SerialPort? _serialPort;
+#endif
+
+    public PicoJsInterface(PicoPage picoPage)
     {
-        private readonly PicoPage _picoPage;
-        private HybridWebView Hwv { get => _picoPage.HybridWebView; }
-        public int Count { get; set; }
-        private List<string> previousPorts = new List<string>();
+        _picoPage = picoPage;
+    }
+
+    public void SendCodeToDevice(string code)
+    {
+        try
+        {
+            // Handle the code sent from JavaScript
+            Console.WriteLine($"Received code: {code}");
+
+            // Ajouter un retour à la ligne pour les commandes Python si ce n'est pas déjà fait
+            if (!code.EndsWith("\r\n") && !code.EndsWith("\n"))
+            {
+                code += "\r\n";
+            }
+
+            // Envoyer le code au Pico via la connexion série
 #if ANDROID
-        private AndroidSerial? _serialConnection;
-        private Thread? _monitoringThread;
-        private bool _monitoringActive = false;
+            if (_serialConnection != null)
+            {
+                _serialConnection.Write(code);
+                Console.WriteLine($"Sent to Pico: {code}");
+            }
+            else
+            {
+                Console.WriteLine("No serial connection available");
+            }
 #else
-        private SerialPort? _serialPort;
+            if (_serialPort != null && _serialPort.IsOpen)
+            {
+                Console.WriteLine($"Serial port is open: {_serialPort.IsOpen}");
+                _serialPort.Write(code);
+                Console.WriteLine($"Sent to Pico: {code}");
+            }
+            else
+            {
+                Console.WriteLine("No serial connection available");
+            }
 #endif
-
-        public PicoJsInterface(PicoPage picoPage)
-        {
-            _picoPage = picoPage;
         }
-
-        public void SendCodeToDevice(string code)
+        catch (Exception ex)
         {
-            try
-            {
-                // Handle the code sent from JavaScript
-                Console.WriteLine($"Received code: {code}");
-
-                // Ajouter un retour à la ligne pour les commandes Python si ce n'est pas déjà fait
-                if (!code.EndsWith("\r\n") && !code.EndsWith("\n"))
-                {
-                    code += "\r\n";
-                }
-
-                // Envoyer le code au Pico via la connexion série
-#if ANDROID
-                if (_serialConnection != null)
-                {
-                    _serialConnection.Write(code);
-                    Console.WriteLine($"Sent to Pico: {code}");
-                }
-                else
-                {
-                    Console.WriteLine("No serial connection available");
-                }
-#else
-                if (_serialPort != null && _serialPort.IsOpen)
-                {
-                    Console.WriteLine($"Serial port is open: {_serialPort.IsOpen}");
-                    _serialPort.Write(code);
-                    Console.WriteLine($"Sent to Pico: {code}");
-                }
-                else
-                {
-                    Console.WriteLine("No serial connection available");
-                }
-#endif
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error sending code to device: {ex.Message}");
-            }
+            Console.WriteLine($"Error sending code to device: {ex.Message}");
         }
+    }
 
-        public async Task<string> GetDeviceStatus()
+    public async Task<string> GetDeviceStatus()
+    {
+        // Return the device status
+        await Task.CompletedTask;
+        return "Device is ready 2";
+    }
+
+    public async Task JSeval()
+    {
+        try
         {
-            // Return the device status
-            await Task.CompletedTask;
-            return "Device is ready 2";
+            await _picoPage.Dispatcher.DispatchAsync(async () =>
+            {
+                await Hwv.EvaluateJavaScriptAsync("window.logMessage('JSeval: call logMessage from C# with eval');");
+            });
         }
-
-        public async Task JSeval()
+        catch (Exception ex)
         {
-            try
-            {
-                await _picoPage.Dispatcher.DispatchAsync(async () =>
-                {
-                    await Hwv.EvaluateJavaScriptAsync("window.logMessage('JSeval: call logMessage from C# with eval');");
-                });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in JSeval: {ex.Message}");
-            }
+            Console.WriteLine($"Error in JSeval: {ex.Message}");
         }
+    }
 
-        public async Task JSinvoke()
+    public async Task JSinvoke()
+    {
+        try
         {
-            try
+            await _picoPage.Dispatcher.DispatchAsync(async () =>
             {
-                await _picoPage.Dispatcher.DispatchAsync(async () =>
-                {
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-                    await Hwv.InvokeJavaScriptAsync<object>(
-                        "window.logMessage",
-                        null, // use it if no return type (void)
-                        ["JSinvoke: call logMessage from C# with invoke", ""],
-                        [VopHybridJSContext.Default.String, VopHybridJSContext.Default.String]
-                    );
+                await Hwv.InvokeJavaScriptAsync<object>(
+                    "window.logMessage",
+                    null, // use it if no return type (void)
+                    ["JSinvoke: call logMessage from C# with invoke", ""],
+                    [VopHybridJSContext.Default.String, VopHybridJSContext.Default.String]
+                );
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
-                });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in JSinvoke: {ex.Message}");
-            }
+            });
         }
-
-        public async Task JSraw()
+        catch (Exception ex)
         {
-            try
-            {
-                await _picoPage.Dispatcher.DispatchAsync(() =>
-                {
-                    Hwv.SendRawMessage($"JSraw : C# send a raw message");
-                });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in JSraw: {ex.Message}");
-            }
+            Console.WriteLine($"Error in JSinvoke: {ex.Message}");
         }
+    }
 
-        public async void onHwvRawMessageReceived(object sender, HybridWebViewRawMessageReceivedEventArgs e)
+    public async Task JSraw()
+    {
+        try
         {
-            try
+            await _picoPage.Dispatcher.DispatchAsync(() =>
             {
-                await _picoPage.Dispatcher.DispatchAsync(async () =>
-                {
-                    await _picoPage.DisplayAlert("Raw Message Received in C#", e.Message, "OK");
-                });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in onHwvRawMessageReceived: {ex.Message}");
-            }
+                Hwv.SendRawMessage($"JSraw : C# send a raw message");
+            });
         }
-
-        public class SyncReturn
+        catch (Exception ex)
         {
-            public string? Message { get; set; }
-            public int Value { get; set; }
+            Console.WriteLine($"Error in JSraw: {ex.Message}");
         }
+    }
 
-        // VopFlow methods
-        private bool ValidateVopFlow(string vopFlowJson, out VopFlow? vopFlow, out string errorMessage)
+    public async void onHwvRawMessageReceived(object sender, HybridWebViewRawMessageReceivedEventArgs e)
+    {
+        try
         {
-            try
+            await _picoPage.Dispatcher.DispatchAsync(async () =>
             {
-                vopFlow = System.Text.Json.JsonSerializer.Deserialize<VopFlow>(vopFlowJson);
-                if (vopFlow == null)
-                {
-                    errorMessage = "Invalid VopFlow JSON";
-                    return false;
-                }
+                await _picoPage.DisplayAlert("Raw Message Received in C#", e.Message, "OK");
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in onHwvRawMessageReceived: {ex.Message}");
+        }
+    }
 
-                if (string.IsNullOrEmpty(vopFlow.version) ||
-                    string.IsNullOrEmpty(vopFlow.name) ||
-                    vopFlow.nodes == null ||
-                    vopFlow.edges == null ||
-                    vopFlow.metadata == null)
-                {
-                    vopFlow = null;
-                    errorMessage = "Missing required fields in VopFlow";
-                    return false;
-                }
+    public class SyncReturn
+    {
+        public string? Message { get; set; }
+        public int Value { get; set; }
+    }
 
-                errorMessage = string.Empty;
-                return true;
-            }
-            catch (System.Text.Json.JsonException ex)
+    // VopFlow methods
+    private bool ValidateVopFlow(string vopFlowJson, out VopFlow? vopFlow, out string errorMessage)
+    {
+        try
+        {
+            vopFlow = System.Text.Json.JsonSerializer.Deserialize<VopFlow>(vopFlowJson);
+            if (vopFlow == null)
             {
-                vopFlow = null;
-                errorMessage = $"JSON parsing error: {ex.Message}";
+                errorMessage = "Invalid VopFlow JSON";
                 return false;
             }
+
+            if (string.IsNullOrEmpty(vopFlow.version) ||
+                string.IsNullOrEmpty(vopFlow.name) ||
+                vopFlow.nodes == null ||
+                vopFlow.edges == null ||
+                vopFlow.metadata == null)
+            {
+                vopFlow = null;
+                errorMessage = "Missing required fields in VopFlow";
+                return false;
+            }
+
+            errorMessage = string.Empty;
+            return true;
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            vopFlow = null;
+            errorMessage = $"JSON parsing error: {ex.Message}";
+            return false;
+        }
+    }
+
+    public async Task<string> OnLoadingVopFlow(string vopFlowJson)
+    {
+        if (!ValidateVopFlow(vopFlowJson, out VopFlow? vopFlow, out string errorMessage))
+        {
+            return errorMessage;
         }
 
-        public async Task<string> OnLoadingVopFlow(string vopFlowJson)
+        try
         {
-            if (!ValidateVopFlow(vopFlowJson, out VopFlow? vopFlow, out string errorMessage))
+            if (vopFlow == null)
             {
-                return errorMessage;
+                return "Failed to deserialize VopFlow";
             }
 
-            try
-            {
-                if (vopFlow == null)
-                {
-                    return "Failed to deserialize VopFlow";
-                }
-
-                // Serialize the object to a JSON string with indentation
-                string jsonString = System.Text.Json.JsonSerializer.Serialize(vopFlow, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
-                Console.WriteLine("OnLoadingVopFlow called with data: " + jsonString);
-                await Task.CompletedTask;
-                return jsonString;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in OnLoadingVopFlow: {ex.Message}");
-                return $"Error processing VopFlow data: {ex.Message}";
-            }
-        }
-
-        public async Task<string> OnSavingVopFlow(string vopFlowJson)
-        {
-            if (!ValidateVopFlow(vopFlowJson, out VopFlow? vopFlow, out string errorMessage))
-            {
-                return errorMessage;
-            }
-
-            try
-            {
-                if (vopFlow == null)
-                {
-                    return "Failed to deserialize VopFlow";
-                }
-
-                // Serialize the object to a JSON string with indentation
-                string jsonString = System.Text.Json.JsonSerializer.Serialize(vopFlow, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
-                Console.WriteLine("OnSavingVopFlow called with data: " + jsonString);
-                await Task.CompletedTask;
-                return jsonString;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in OnSavingVopFlow: {ex.Message}");
-                return $"Error processing VopFlow data: {ex.Message}";
-            }
-        }
-
-        public async Task ExecuteVopFlow()
-        {
-            // Implement the logic to execute the current VopFlow
-            Console.WriteLine("Executing VopFlow");
+            // Serialize the object to a JSON string with indentation
+            string jsonString = System.Text.Json.JsonSerializer.Serialize(vopFlow, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            Console.WriteLine("OnLoadingVopFlow called with data: " + jsonString);
             await Task.CompletedTask;
+            return jsonString;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in OnLoadingVopFlow: {ex.Message}");
+            return $"Error processing VopFlow data: {ex.Message}";
+        }
+    }
+
+    public async Task<string> OnSavingVopFlow(string vopFlowJson)
+    {
+        if (!ValidateVopFlow(vopFlowJson, out VopFlow? vopFlow, out string errorMessage))
+        {
+            return errorMessage;
         }
 
-        public async Task OnVopFlowExecutionError(string error)
+        try
         {
-            // Implement the logic to handle errors during VopFlow execution
-            Console.WriteLine($"VopFlow execution error: {error}");
+            if (vopFlow == null)
+            {
+                return "Failed to deserialize VopFlow";
+            }
+
+            // Serialize the object to a JSON string with indentation
+            string jsonString = System.Text.Json.JsonSerializer.Serialize(vopFlow, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            Console.WriteLine("OnSavingVopFlow called with data: " + jsonString);
             await Task.CompletedTask;
+            return jsonString;
         }
-
-        public async Task<List<string>> ListSerialPorts()
+        catch (Exception ex)
         {
-            var currentPorts = new List<string>();
-            var resultPorts = new List<string>();
+            Console.WriteLine($"Error in OnSavingVopFlow: {ex.Message}");
+            return $"Error processing VopFlow data: {ex.Message}";
+        }
+    }
 
-            try
-            {
-                List<string> serial_port_names = new List<string>();
+    public async Task ExecuteVopFlow()
+    {
+        // Implement the logic to execute the current VopFlow
+        Console.WriteLine("Executing VopFlow");
+        await Task.CompletedTask;
+    }
+
+    public async Task OnVopFlowExecutionError(string error)
+    {
+        // Implement the logic to handle errors during VopFlow execution
+        Console.WriteLine($"VopFlow execution error: {error}");
+        await Task.CompletedTask;
+    }
+
+    public async Task<List<string>> ListSerialPorts()
+    {
+        var currentPorts = new List<string>();
+        var resultPorts = new List<string>();
+
+        try
+        {
+            List<string> serial_port_names = new List<string>();
 #if ANDROID
-                var usbManager = (UsbManager?)Android.App.Application.Context.GetSystemService(Context.UsbService);
-                var deviceList = usbManager?.DeviceList;
-                if (deviceList != null)
-                {
-                    foreach (var device in deviceList.Values)
-                        serial_port_names.Add(device.DeviceName);
-                }
+            var usbManager = (UsbManager?)Android.App.Application.Context.GetSystemService(Context.UsbService);
+            var deviceList = usbManager?.DeviceList;
+            if (deviceList != null)
+            {
+                foreach (var device in deviceList.Values)
+                    serial_port_names.Add(device.DeviceName);
+            }
 #else
-                serial_port_names.AddRange(SerialPort.GetPortNames());
+            serial_port_names.AddRange(SerialPort.GetPortNames());
 #endif
-                foreach (string port in serial_port_names)
-                {
-                    var portDetails = "";
-                    if (previousPorts.Count > 0 && !previousPorts.Contains(port))
-                        portDetails = " (new)";
-                    currentPorts.Add(port);
-                    resultPorts.Add($"{port}{portDetails}");
-                }
-            }
-            catch (Exception ex)
+            foreach (string port in serial_port_names)
             {
-                Console.WriteLine($"Error listing serial ports: {ex.Message}");
-            }
-
-            previousPorts = currentPorts;
-            await Task.CompletedTask;
-            return resultPorts;
-        }
-
-        public async Task<string> SelectSerialPort(string portName)
-        {
-            try
-            {
-                Console.WriteLine($"Selected serial port: {portName}");
-
-                bool device_found = false;
-#if ANDROID
-                // Android specific implementation
-                var usbManager = (UsbManager?)Android.App.Application.Context.GetSystemService(Context.UsbService);
-                var deviceList = usbManager?.DeviceList;
-
-                if (deviceList != null)
-                {
-                    foreach (var device in deviceList.Values)
-                    {
-                        if (device.DeviceName == portName)
-                        {
-                            // Get MainActivity instance to use ConnectToSerialDevice method
-                            var mainActivity = (MainActivity?)Android.App.Application.Context;
-                            if (mainActivity != null)
-                            {
-                                mainActivity.ConnectToSerialDevice(device);
-                                _serialConnection = new AndroidSerial(Android.App.Application.Context, device);
-                                device_found = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-#else
-                // Windows/Mac/Linux implementation
-                if (_serialPort != null && _serialPort.IsOpen)
-                {
-                    _serialPort.Close();
-                }
-
-                _serialPort = new SerialPort(portName, 115200, Parity.None, 8, StopBits.One);
-                _serialPort.Open();
-                _serialPort.Encoding = System.Text.Encoding.UTF8;
-                _serialPort.Handshake = Handshake.None;
-                _serialPort.DtrEnable = true;
-                _serialPort.RtsEnable = true;
-                _serialPort.NewLine = "\r\n";
-                _serialPort.ReadTimeout = 1000;
-                device_found = true;
-#endif
-                if (device_found)
-                {
-                    StartSerialMonitoring();
-                    SendCodeToDevice("print('Pico connected to VoP')");
-                }
-
-                await Task.CompletedTask;
-                return portName;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error selecting serial port: {ex.Message}");
-                return "";
+                var portDetails = "";
+                if (previousPorts.Count > 0 && !previousPorts.Contains(port))
+                    portDetails = " (new)";
+                currentPorts.Add(port);
+                resultPorts.Add($"{port}{portDetails}");
             }
         }
-
-        private void StartSerialMonitoring()
+        catch (Exception ex)
         {
-#if ANDROID
-            if (_serialConnection == null) return;
-
-            _monitoringActive = true;
-            _monitoringThread = new Thread(() =>
-            {
-                try
-                {
-                    while (_monitoringActive)
-                    {
-                        string? message = _serialConnection.Read();
-                        if (!string.IsNullOrEmpty(message))
-                        {
-                            // Send message to frontend via logMessage
-                            SendLogMessage($"P> {message}");
-                        }
-                        Thread.Sleep(100); // Wait 100ms between reads
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error monitoring serial messages: {ex.Message}");
-                }
-            });
-            _monitoringThread.Start();
-#else
-            if (_serialPort == null || !_serialPort.IsOpen) return;
-
-            _serialPort.ErrorReceived += (sender, e) =>
-            {
-                Console.WriteLine($"Serial port error: {e.EventType}");
-            };
-
-            _serialPort.DataReceived += (sender, e) =>
-            {
-                try
-                {
-                    Console.WriteLine("serial port new data received");
-                    try
-                    {
-                        string message = _serialPort.ReadLine();
-                        if (!string.IsNullOrEmpty(message))
-                        {
-                            SendLogMessage($"P> {message}");
-                        }
-                    }
-                    catch (TimeoutException)
-                    {
-                        // if no \r\n found, read all available bytes
-                        if (_serialPort.BytesToRead > 0)
-                        {
-                            string message = _serialPort.ReadExisting();
-                            if (!string.IsNullOrEmpty(message))
-                            {
-                                SendLogMessage($"P?> {message}");
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error reading from serial port: {ex.Message}");
-                }
-            };
-#endif
+            Console.WriteLine($"Error listing serial ports: {ex.Message}");
         }
 
-        public void CloseSerialConnection()
+        previousPorts = currentPorts;
+        await Task.CompletedTask;
+        return resultPorts;
+    }
+
+    public async Task<string> SelectSerialPort(string portName)
+    {
+        try
         {
+            Console.WriteLine($"Selected serial port: {portName}");
+
+            bool device_found = false;
 #if ANDROID
-            _monitoringActive = false;
-            _monitoringThread?.Join();
-            _serialConnection?.Close();
-            _serialConnection = null;
+            // Android specific implementation
+            var usbManager = (UsbManager?)Android.App.Application.Context.GetSystemService(Context.UsbService);
+            var deviceList = usbManager?.DeviceList;
+
+            if (deviceList != null)
+            {
+                foreach (var device in deviceList.Values)
+                {
+                    if (device.DeviceName == portName)
+                    {
+                        // Get MainActivity instance to use ConnectToSerialDevice method
+                        var mainActivity = (MainActivity?)Android.App.Application.Context;
+                        if (mainActivity != null)
+                        {
+                            mainActivity.ConnectToSerialDevice(device);
+                            _serialConnection = new AndroidSerial(Android.App.Application.Context, device);
+                            device_found = true;
+                            break;
+                        }
+                    }
+                }
+            }
 #else
+            // Windows/Mac/Linux implementation
             if (_serialPort != null && _serialPort.IsOpen)
             {
                 _serialPort.Close();
             }
-            _serialPort = null;
-#endif
-        }
 
-        private void SendLogMessage(string message)
+            _serialPort = new SerialPort(portName, 115200, Parity.None, 8, StopBits.One);
+            _serialPort.Open();
+            _serialPort.Encoding = System.Text.Encoding.UTF8;
+            _serialPort.Handshake = Handshake.None;
+            _serialPort.DtrEnable = true;
+            _serialPort.RtsEnable = true;
+            _serialPort.NewLine = "\r\n";
+            _serialPort.ReadTimeout = 500;
+            device_found = true;
+#endif
+            if (device_found)
+            {
+                StartSerialMonitoring();
+                SendCodeToDevice("print('Pico connected to VoP')");
+            }
+
+            await Task.CompletedTask;
+            return portName;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error selecting serial port: {ex.Message}");
+            return "";
+        }
+    }
+
+    private void StartSerialMonitoring()
+    {
+#if ANDROID
+        if (_serialConnection == null) return;
+
+        _monitoringActive = true;
+        _monitoringThread = new Thread(() =>
         {
             try
             {
-                _picoPage.Dispatcher.DispatchAsync(async () =>
+                while (_monitoringActive)
                 {
-                    Console.WriteLine($"Sending log message to JS: {message}");
-                    string encodedMessage = HttpUtility.JavaScriptStringEncode(message);
-                    //await Hwv.EvaluateJavaScriptAsync($"window.logMessage('{encodedMessage}')");
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-                    await Hwv.InvokeJavaScriptAsync<object>(
-                        "window.logMessage",
-                        null, // use it if no return type (void)
-                        [encodedMessage],
-                        [VopHybridJSContext.Default.String]
-                    );
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
-                });
+                    string? message = _serialConnection.Read();
+                    if (!string.IsNullOrEmpty(message))
+                    {
+                        // Send message to frontend via receiveDataFromDevice
+                        SendDataReceived(message);
+                    }
+                    Thread.Sleep(100); // Wait 100ms between reads
+                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error sending log message: {ex.Message}");
+                Console.WriteLine($"Error monitoring serial messages: {ex.Message}");
             }
-        }
+        });
+        _monitoringThread.Start();
+#else
+        if (_serialPort == null || !_serialPort.IsOpen) return;
 
+        _serialPort.ErrorReceived += (sender, e) =>
+        {
+            Console.WriteLine($"Serial port error: {e.EventType}");
+        };
+
+        _serialPort.DataReceived += (sender, e) =>
+        {
+            try
+            {
+                Console.WriteLine("serial port new data received");
+                do
+                {
+                    string? message = null;
+                    try
+                    {
+                        message = _serialPort.ReadLine();
+                    }
+                    catch (TimeoutException)
+                    {
+                        // if no \r\n found after 1sec, read all available bytes
+                        if (_serialPort.BytesToRead > 0)
+                            message = _serialPort.ReadExisting();
+                    }
+                    if (!string.IsNullOrEmpty(message))
+                    {
+                        SendDataReceived(message);
+                    }
+                }
+                while (_serialPort.BytesToRead > 0);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error reading from serial port: {ex.Message}");
+            }
+        };
+#endif
+    }
+
+    public void CloseSerialConnection()
+    {
+#if ANDROID
+        _monitoringActive = false;
+        _monitoringThread?.Join();
+        _serialConnection?.Close();
+        _serialConnection = null;
+#else
+        if (_serialPort != null && _serialPort.IsOpen)
+        {
+            _serialPort.Close();
+        }
+        _serialPort = null;
+#endif
+    }
+
+    private void SendDataReceived(string message, LogMessageType? type=LogMessageType.code)
+    {
+        try
+        {
+            _picoPage.Dispatcher.DispatchAsync(async () =>
+            {
+                Console.WriteLine($"Sending data received to JS: {message}");
+                string encodedMessage = HttpUtility.JavaScriptStringEncode(message);
+                
+                try
+                {
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
+                await Hwv.InvokeJavaScriptAsync<object>(
+                    "window.vopHost.receiveDataFromDevice",
+                    null, // use it if no return type (void)
+                    [encodedMessage, type?.ToString()],
+                    [VopHybridJSContext.Default.String, VopHybridJSContext.Default.String]
+                );
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error sending data received InvokeJavaScriptAsync: {ex.Message}");
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error sending data received: {ex.Message}");
+        }
+    }
+
+    private void SendLogMessage(string message, LogMessageType? type=null)
+    {
+        try
+        {
+            _picoPage.Dispatcher.DispatchAsync(async () =>
+            {
+                Console.WriteLine($"Sending log message to JS: {message}");
+                string encodedMessage = HttpUtility.JavaScriptStringEncode(message);
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
+                await Hwv.InvokeJavaScriptAsync<object>(
+                    "window.logMessage",
+                    null, // use it if no return type (void)
+                    [encodedMessage, type?.ToString()],
+                    [VopHybridJSContext.Default.String, VopHybridJSContext.Default.String]
+                );
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error sending log message: {ex.Message}");
+        }
     }
 }
