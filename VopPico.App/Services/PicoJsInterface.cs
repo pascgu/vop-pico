@@ -21,10 +21,10 @@ public class PicoJsInterface
     private HybridWebView Hwv { get => _picoPage.HybridWebView; }
     public int Count { get; set; }
     private List<string> previousPorts = new List<string>();
+    private string _receiveBuffer = string.Empty;
+    private CancellationTokenSource? _cts;
 #if ANDROID
     private AndroidSerial? _serialConnection;
-    private Thread? _monitoringThread;
-    private bool _monitoringActive = false;
 #else
     private SerialPort? _serialPort;
 #endif
@@ -303,29 +303,19 @@ public class PicoJsInterface
         {
             Console.WriteLine($"Selected serial port: {portName}");
 
-            bool device_found = false;
 #if ANDROID
             // Android specific implementation
             var usbManager = (UsbManager?)Android.App.Application.Context.GetSystemService(Context.UsbService);
-            var deviceList = usbManager?.DeviceList;
+            var device = usbManager?.DeviceList?.Values.FirstOrDefault(d => d.DeviceName == portName);
 
-            if (deviceList != null)
+            if (device != null)
             {
-                foreach (var device in deviceList.Values)
-                {
-                    if (device.DeviceName == portName)
-                    {
-                        // Get MainActivity instance to use ConnectToSerialDevice method
-                        var mainActivity = (MainActivity?)Android.App.Application.Context;
-                        if (mainActivity != null)
-                        {
-                            mainActivity.ConnectToSerialDevice(device);
-                            _serialConnection = new AndroidSerial(Android.App.Application.Context, device);
-                            device_found = true;
-                            break;
-                        }
-                    }
-                }
+                SendLogMessage($"Device found: {device.DeviceName} - {device.ProductName} - {device.ManufacturerName}");
+                MainActivity? mainActivity = Microsoft.Maui.ApplicationModel.Platform.CurrentActivity as MainActivity;
+                MainActivity.UsbPermissionGranted -= OnUsbPermissionResult;
+                MainActivity.UsbPermissionGranted += OnUsbPermissionResult;
+
+                mainActivity?.RequestUsbPermission(device);
             }
 #else
             // Windows/Mac/Linux implementation
@@ -342,51 +332,170 @@ public class PicoJsInterface
             _serialPort.RtsEnable = true;
             _serialPort.NewLine = "\r\n";
             _serialPort.ReadTimeout = 500;
-            device_found = true;
+            _serialPort.WriteTimeout = 500;
+            _serialPort.ReceivedBytesThreshold = 1;
+            
+            StartSerialMonitoring();
+            SendCodeToDevice("print('Pico connected to VoP')");
 #endif
-            if (device_found)
-            {
-                StartSerialMonitoring();
-                SendCodeToDevice("print('Pico connected to VoP')");
-            }
-
             await Task.CompletedTask;
             return portName;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error selecting serial port: {ex.Message}");
+            SendLogMessage($"Error selecting serial port: {ex.Message}", LogMessageType.error);
+            SendLogMessage($"Stack trace: {ex.StackTrace}", LogMessageType.error);
             return "";
         }
     }
 
+#if ANDROID
+    private void OnUsbPermissionResult(object? sender, UsbDevice device)
+    {
+        SendLogMessage($"Permission granted for device: {device.DeviceName}");
+        MainActivity.UsbPermissionGranted -= OnUsbPermissionResult;
+        try
+        {
+            _serialConnection = new AndroidSerial(Android.App.Application.Context, device);
+            StartSerialMonitoring();
+            SendCodeToDevice("print('Pico connected to VoP')");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error creating serial connection: {ex.Message}");
+            SendLogMessage($"Error creating serial connection: {ex.Message}", LogMessageType.error);
+            SendLogMessage($"Stack trace: {ex.StackTrace}", LogMessageType.error);
+        }
+    }
+#endif
+
     private void StartSerialMonitoring()
+    {
+        // Cancel any previous task
+        _cts?.Cancel();
+        _cts = new CancellationTokenSource();
+        CancellationToken token = _cts.Token;
+
+        Task.Run(async () =>
+        {
+            try
+            {
+                while (!token.IsCancellationRequested)
+                {
+                    string? fragment = null;
+
+#if ANDROID
+                    // Read raw data using BulkTransfer on Android
+                    if (_serialConnection != null)
+                    {
+                        fragment = _serialConnection.Read();
+                    }
+#else
+                    // Read data using SerialPort on Windows
+                    if (_serialPort != null && _serialPort.IsOpen && _serialPort.BytesToRead > 0)
+                    {
+                        fragment = _serialPort.ReadExisting();
+                    }
+#endif
+
+                    if (!string.IsNullOrEmpty(fragment))
+                    {
+                        _receiveBuffer += fragment;
+
+                        // Manage all complete lines in the buffer
+                        while (_receiveBuffer.Contains("\n"))
+                        {
+                            int lineEndIndex = _receiveBuffer.IndexOf("\n");
+                            string completeLine = _receiveBuffer.Substring(0, lineEndIndex + 1);
+                            string cleanLine = completeLine.TrimEnd('\r', '\n');
+                            if (!string.IsNullOrEmpty(cleanLine))
+                            {
+                                // send data to frontend
+                                SendDataReceived(cleanLine);
+                            }
+
+                            // Remove the processed line from the buffer
+                            _receiveBuffer = _receiveBuffer.Substring(lineEndIndex + 1);
+                        }
+
+                        // Manage specific MicroPython REPL prompt (without \n)
+                        if (_receiveBuffer == ">>> ")
+                        {
+                            SendDataReceived(_receiveBuffer);
+                            _receiveBuffer = string.Empty;
+                        }
+                    }
+
+                    // Pause for processor to avoid overloading
+                    await Task.Delay(20, token);
+                }
+            }
+            catch (System.OperationCanceledException) { /* Normal stop */ }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error monitoring serial messages: {ex.Message}");
+                SendLogMessage($"Error monitoring serial connection: {ex.Message}", LogMessageType.error);
+                SendLogMessage($"Stack trace: {ex.StackTrace}", LogMessageType.error);
+            }
+        }, token);
+    }
+
+    private void StartSerialMonitoringOLD()
     {
 #if ANDROID
         if (_serialConnection == null) return;
 
-        _monitoringActive = true;
-        _monitoringThread = new Thread(() =>
+        _cts?.Cancel(); // Security: cancel previous task
+        _cts = new CancellationTokenSource();
+        CancellationToken token = _cts.Token;
+        Task.Run(async () =>
         {
             try
             {
-                while (_monitoringActive)
+                while (!token.IsCancellationRequested)
                 {
-                    string? message = _serialConnection.Read();
-                    if (!string.IsNullOrEmpty(message))
+                    string? fragment = _serialConnection?.Read();
+                    if (!string.IsNullOrEmpty(fragment))
                     {
-                        // Send message to frontend via receiveDataFromDevice
-                        SendDataReceived(message);
+                        _receiveBuffer += fragment;
+
+                        // Check if we have at least one complete line (\n)
+                        while (_receiveBuffer.Contains("\n"))
+                        {
+                            int lineEndIndex = _receiveBuffer.IndexOf("\n");
+                            string completeLine = _receiveBuffer.Substring(0, lineEndIndex + 1).Trim();
+                            
+                            // Send the complete line to the frontend
+                            if (!string.IsNullOrEmpty(completeLine))
+                            {
+                                SendDataReceived(completeLine);
+                            }
+
+                            // keep the rest in the buffer
+                            _receiveBuffer = _receiveBuffer.Substring(lineEndIndex + 1);
+                        }
+
+                        // Special case for MicroPython prompt ">>> " which has no \n
+                        if (_receiveBuffer == ">>> ")
+                        {
+                            SendDataReceived(_receiveBuffer);
+                            _receiveBuffer = string.Empty;
+                        }
                     }
-                    Thread.Sleep(100); // Wait 100ms between reads
+                    await Task.Delay(20, token);
                 }
+
             }
+            catch (System.OperationCanceledException) { /* Normal stop */ }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error monitoring serial messages: {ex.Message}");
+                SendLogMessage($"Error monitoring serial connection: {ex.Message}", LogMessageType.error);
+                SendLogMessage($"Stack trace: {ex.StackTrace}", LogMessageType.error);
             }
-        });
-        _monitoringThread.Start();
+        }, token);
+
 #else
         if (_serialPort == null || !_serialPort.IsOpen) return;
 
@@ -430,18 +539,25 @@ public class PicoJsInterface
 
     public void CloseSerialConnection()
     {
-#if ANDROID
-        _monitoringActive = false;
-        _monitoringThread?.Join();
-        _serialConnection?.Close();
-        _serialConnection = null;
-#else
-        if (_serialPort != null && _serialPort.IsOpen)
+        try 
         {
-            _serialPort.Close();
-        }
-        _serialPort = null;
+#if ANDROID
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _serialConnection?.Close();
+            _serialConnection = null;
+#else
+            if (_serialPort != null && _serialPort.IsOpen)
+            {
+                _serialPort.Close();
+            }
+            _serialPort = null;
 #endif
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"CloseSerialConnection error : {ex.Message}");
+        }
     }
 
     private void SendDataReceived(string message, LogMessageType? type=LogMessageType.code)
@@ -451,8 +567,10 @@ public class PicoJsInterface
             _picoPage.Dispatcher.DispatchAsync(async () =>
             {
                 Console.WriteLine($"Sending data received to JS: {message}");
-                string encodedMessage = HttpUtility.JavaScriptStringEncode(message);
-                
+                string encodedMessage = message;
+#if !ANDROID
+                encodedMessage = HttpUtility.JavaScriptStringEncode(message);
+#endif
                 try
                 {
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.

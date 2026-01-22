@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <usb-device vendor-id="2E8A" /> <!-- Vendor ID for Raspberry Pi Pico -->
+  <usb-device vendor-id="0x2E8A" /> <!-- Vendor ID for Raspberry Pi Pico -->
 </resources>

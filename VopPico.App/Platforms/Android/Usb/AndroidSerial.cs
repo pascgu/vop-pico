@@ -12,6 +12,9 @@ namespace VopPico.App.Platforms.Android.Usb
         private readonly UsbEndpoint _writeEndpoint;
         private readonly UsbDevice _usbDevice;
 
+        public int ReadTimeout { get; set; } = 1000; // Default timeout in milliseconds
+        public int WriteTimeout { get; set; } = 1000; // Default timeout in milliseconds
+
         public AndroidSerial(Context context, UsbDevice device)
         {
             if (context == null)
@@ -24,23 +27,32 @@ namespace VopPico.App.Platforms.Android.Usb
                 throw new Exception("USB service not available");
             _usbManager = usbManager;
 
-            UsbDeviceConnection? usbConnection = _usbManager.OpenDevice(_usbDevice);
+            UsbDeviceConnection? usbConnection = _usbManager.OpenDevice(device);
             if (usbConnection == null)
                 throw new Exception("Failed to open USB device");
             _usbConnection = usbConnection;
 
-            _usbDevice = device;
-            if (_usbDevice.InterfaceCount < 1)
+            if (device.InterfaceCount < 1)
                 throw new Exception("No interfaces found");
 
-            UsbInterface usbInterface = _usbDevice.GetInterface(0);
-            if (usbInterface == null || usbInterface.EndpointCount < 1)
-                throw new Exception("No endpoints found");
-
-            if (!_usbManager.HasPermission(_usbDevice))
+            if (!_usbManager.HasPermission(device))
             {
                 throw new Exception("No permission for USB device");
             }
+
+            UsbInterface? dataInterface = null;
+            for (int i = 0; i < device.InterfaceCount; i++)
+            {
+                var inter = device.GetInterface(i);
+                // Looking for the interface with 2 endpoints (often interface 1 on Pico)
+                if (inter.EndpointCount >= 2) 
+                {
+                    dataInterface = inter;
+                    break;
+                }
+            }
+
+            UsbInterface usbInterface = dataInterface ?? device.GetInterface(0);
 
             if (!_usbConnection.ClaimInterface(usbInterface, true))
             {
@@ -48,22 +60,35 @@ namespace VopPico.App.Platforms.Android.Usb
                 throw new Exception("Failed to claim interface");
             }
             
-            SetDtrRts(true,true);
+            SetDtrRts(true,true); // activate DTR and RTS
 
-            UsbEndpoint? readEndpoint = usbInterface.GetEndpoint(0);
-            UsbEndpoint? writeEndpoint = usbInterface.GetEndpoint(1);
+            UsbEndpoint? readEndpoint = null;
+            UsbEndpoint? writeEndpoint = null;
+            for (int i = 0; i < usbInterface.EndpointCount; i++)
+            {
+                UsbEndpoint? ep = usbInterface.GetEndpoint(i);
+                if (ep?.Type == UsbAddressing.XferBulk)
+                {
+                    if (ep.Direction == UsbAddressing.In)
+                        readEndpoint = ep;
+                    else
+                        writeEndpoint = ep;
+                }
+            }
             if (readEndpoint == null)
                 throw new Exception("No read endpoint found");
             if (writeEndpoint == null)
                 throw new Exception("No write endpoint found");
             _readEndpoint = readEndpoint;
             _writeEndpoint = writeEndpoint;
+
+            _usbDevice = device;
         }
 
         public string? Read()
         {
             byte[] buffer = new byte[1024];
-            int bytesRead = _usbConnection.BulkTransfer(_readEndpoint, buffer, buffer.Length, 1000);
+            int bytesRead = _usbConnection.BulkTransfer(_readEndpoint, buffer, buffer.Length, ReadTimeout);
             if (bytesRead > 0)
             {
                 return Encoding.UTF8.GetString(buffer, 0, bytesRead);
@@ -74,7 +99,7 @@ namespace VopPico.App.Platforms.Android.Usb
         public void Write(string data)
         {
             byte[] buffer = Encoding.UTF8.GetBytes(data);
-            int bytesWritten = _usbConnection.BulkTransfer(_writeEndpoint, buffer, buffer.Length, 1000);
+            int bytesWritten = _usbConnection.BulkTransfer(_writeEndpoint, buffer, buffer.Length, WriteTimeout);
             if (bytesWritten < 0)
             {
                 throw new Exception("Failed to write to USB device");
