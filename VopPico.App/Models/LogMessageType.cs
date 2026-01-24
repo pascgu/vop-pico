@@ -1,5 +1,5 @@
 
-namespace VopPico.App.Services;
+namespace VopPico.App.Models;
 
 enum LogMessageType {
     error,

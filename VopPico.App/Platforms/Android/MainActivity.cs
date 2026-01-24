@@ -3,7 +3,6 @@ using Android.Content.PM;
 using Android.Content;
 using Android.Hardware.Usb;
 using Android.OS;
-using VopPico.App.Platforms.Android.Usb;
 
 namespace VopPico.App;
 
@@ -17,7 +16,6 @@ public class MainActivity : MauiAppCompatActivity
     private PendingIntent? _permissionIntent;
     private const int VENDOR_ID_RASPBERRY_PICO = 0x2E8A; // Vendor ID for Raspberry Pi Pico
     public const string ACTION_USB_PERMISSION = "android.hardware.usb.action.USB_PERMISSION";
-    //public const string ACTION_USB_PERMISSION = "com.companyname.voppico.app.USB_PERMISSION";
 
     public static event EventHandler<UsbDevice>? UsbPermissionGranted;
 

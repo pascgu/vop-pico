@@ -12,7 +12,7 @@
 *Objective: Convert the VopFlow JSON file into MicroPython commands and execute them sequentially via USB.*
 
 1. ✅ Implement serial port listing and selection.
-2. Monitor and display messages sent by the Pico on the serial port and display them with logMessage.
+2. ✅ Monitor and display messages sent by the Pico on the serial port and display them with logMessage.
 3. Convert VopFlow to MicroPython commands.
 4. Execute commands via USB.
 5. Validate MicroPython code generation and sending to Pico.

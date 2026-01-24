@@ -1,20 +1,9 @@
 using VopPico.App.Pages;
 using static VopPico.App.Pages.PicoPage;
 using VopPico.App.Models;
-using System.Web;
-
-#if ANDROID
-using Android.App;
-using Android.OS;
-using Android.Hardware.Usb;
-using Android.Content;
-using VopPico.App.Platforms.Android.Usb;
-#else
-using System.IO.Ports; // works at least with windows
-#endif
+using VopPico.App.Interfaces;
 
 namespace VopPico.App.Services;
-
 public class PicoJsInterface
 {
     private readonly PicoPage _picoPage;
@@ -23,11 +12,7 @@ public class PicoJsInterface
     private List<string> previousPorts = new List<string>();
     private string _receiveBuffer = string.Empty;
     private CancellationTokenSource? _cts;
-#if ANDROID
-    private AndroidSerial? _serialConnection;
-#else
-    private SerialPort? _serialPort;
-#endif
+    private ISerialConnection? _serialConnection;
 
     public PicoJsInterface(PicoPage picoPage)
     {
@@ -48,8 +33,7 @@ public class PicoJsInterface
             }
 
             // Envoyer le code au Pico via la connexion série
-#if ANDROID
-            if (_serialConnection != null)
+            if (_serialConnection?.IsOpen ?? false)
             {
                 _serialConnection.Write(code);
                 Console.WriteLine($"Sent to Pico: {code}");
@@ -58,18 +42,6 @@ public class PicoJsInterface
             {
                 Console.WriteLine("No serial connection available");
             }
-#else
-            if (_serialPort != null && _serialPort.IsOpen)
-            {
-                Console.WriteLine($"Serial port is open: {_serialPort.IsOpen}");
-                _serialPort.Write(code);
-                Console.WriteLine($"Sent to Pico: {code}");
-            }
-            else
-            {
-                Console.WriteLine("No serial connection available");
-            }
-#endif
         }
         catch (Exception ex)
         {
@@ -266,18 +238,7 @@ public class PicoJsInterface
 
         try
         {
-            List<string> serial_port_names = new List<string>();
-#if ANDROID
-            var usbManager = (UsbManager?)Android.App.Application.Context.GetSystemService(Context.UsbService);
-            var deviceList = usbManager?.DeviceList;
-            if (deviceList != null)
-            {
-                foreach (var device in deviceList.Values)
-                    serial_port_names.Add(device.DeviceName);
-            }
-#else
-            serial_port_names.AddRange(SerialPort.GetPortNames());
-#endif
+            List<string> serial_port_names = SerialConnectionFactory.ListPorts();
             foreach (string port in serial_port_names)
             {
                 var portDetails = "";
@@ -303,41 +264,14 @@ public class PicoJsInterface
         {
             Console.WriteLine($"Selected serial port: {portName}");
 
-#if ANDROID
-            // Android specific implementation
-            var usbManager = (UsbManager?)Android.App.Application.Context.GetSystemService(Context.UsbService);
-            var device = usbManager?.DeviceList?.Values.FirstOrDefault(d => d.DeviceName == portName);
+            // Close actual Serial connection if opened
+            CloseSerialConnection();
 
-            if (device != null)
-            {
-                SendLogMessage($"Device found: {device.DeviceName} - {device.ProductName} - {device.ManufacturerName}");
-                MainActivity? mainActivity = Microsoft.Maui.ApplicationModel.Platform.CurrentActivity as MainActivity;
-                MainActivity.UsbPermissionGranted -= OnUsbPermissionResult;
-                MainActivity.UsbPermissionGranted += OnUsbPermissionResult;
+            // Create new Serial connection
+            _serialConnection = SerialConnectionFactory.Create();
+            _serialConnection.ConnectionCreated += OnSerialConnectionCreated;
+            _serialConnection.Connect(portName);
 
-                mainActivity?.RequestUsbPermission(device);
-            }
-#else
-            // Windows/Mac/Linux implementation
-            if (_serialPort != null && _serialPort.IsOpen)
-            {
-                _serialPort.Close();
-            }
-
-            _serialPort = new SerialPort(portName, 115200, Parity.None, 8, StopBits.One);
-            _serialPort.Open();
-            _serialPort.Encoding = System.Text.Encoding.UTF8;
-            _serialPort.Handshake = Handshake.None;
-            _serialPort.DtrEnable = true;
-            _serialPort.RtsEnable = true;
-            _serialPort.NewLine = "\r\n";
-            _serialPort.ReadTimeout = 500;
-            _serialPort.WriteTimeout = 500;
-            _serialPort.ReceivedBytesThreshold = 1;
-            
-            StartSerialMonitoring();
-            SendCodeToDevice("print('Pico connected to VoP')");
-#endif
             await Task.CompletedTask;
             return portName;
         }
@@ -350,25 +284,35 @@ public class PicoJsInterface
         }
     }
 
-#if ANDROID
-    private void OnUsbPermissionResult(object? sender, UsbDevice device)
+    private void OnSerialConnectionCreated(object? sender, EventArgs e)
     {
-        SendLogMessage($"Permission granted for device: {device.DeviceName}");
-        MainActivity.UsbPermissionGranted -= OnUsbPermissionResult;
         try
         {
-            _serialConnection = new AndroidSerial(Android.App.Application.Context, device);
             StartSerialMonitoring();
             SendCodeToDevice("print('Pico connected to VoP')");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error creating serial connection: {ex.Message}");
-            SendLogMessage($"Error creating serial connection: {ex.Message}", LogMessageType.error);
-            SendLogMessage($"Stack trace: {ex.StackTrace}", LogMessageType.error);
+            Console.WriteLine($"Error in OnSerialConnectionCreated: {ex.Message}");
+            SendLogMessage($"Error in OnSerialConnectionCreated: {ex.Message}", LogMessageType.error);
         }
     }
-#endif
+
+    public void CloseSerialConnection()
+    {
+        try
+        {
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = null;
+            _serialConnection?.Close();
+            _serialConnection = null;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"CloseSerialConnection error : {ex.Message}");
+        }
+    }
 
     private void StartSerialMonitoring()
     {
@@ -385,19 +329,10 @@ public class PicoJsInterface
                 {
                     string? fragment = null;
 
-#if ANDROID
-                    // Read raw data using BulkTransfer on Android
-                    if (_serialConnection != null)
+                    if (_serialConnection != null && _serialConnection.IsOpen)
                     {
                         fragment = _serialConnection.Read();
                     }
-#else
-                    // Read data using SerialPort on Windows
-                    if (_serialPort != null && _serialPort.IsOpen && _serialPort.BytesToRead > 0)
-                    {
-                        fragment = _serialPort.ReadExisting();
-                    }
-#endif
 
                     if (!string.IsNullOrEmpty(fragment))
                     {
@@ -441,31 +376,7 @@ public class PicoJsInterface
         }, token);
     }
 
-    public void CloseSerialConnection()
-    {
-        try 
-        {
-            _cts?.Cancel();
-            _cts?.Dispose();
-            _cts = null;
-#if ANDROID
-            _serialConnection?.Close();
-            _serialConnection = null;
-#else
-            if (_serialPort != null && _serialPort.IsOpen)
-            {
-                _serialPort.Close();
-            }
-            _serialPort = null;
-#endif
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"CloseSerialConnection error : {ex.Message}");
-        }
-    }
-
-    private void SendDataReceived(string message, LogMessageType? type=LogMessageType.code)
+    private void SendDataReceived(string message, LogMessageType? type = LogMessageType.code)
     {
         try
         {
@@ -479,12 +390,12 @@ public class PicoJsInterface
                 try
                 {
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-                await Hwv.InvokeJavaScriptAsync<object>(
-                    "window.vopHost.receiveDataFromDevice",
-                    null, // use it if no return type (void)
-                    [encodedMessage, type?.ToString()],
-                    [VopHybridJSContext.Default.String, VopHybridJSContext.Default.String]
-                );
+                    await Hwv.InvokeJavaScriptAsync<object>(
+                        "window.vopHost.receiveDataFromDevice",
+                        null, // use it if no return type (void)
+                        [encodedMessage, type?.ToString()],
+                        [VopHybridJSContext.Default.String, VopHybridJSContext.Default.String]
+                    );
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
                 }
                 catch (Exception ex)
@@ -499,7 +410,7 @@ public class PicoJsInterface
         }
     }
 
-    private void SendLogMessage(string message, LogMessageType? type=null)
+    private void SendLogMessage(string message, LogMessageType? type = null)
     {
         try
         {
