@@ -20,6 +20,8 @@ public class AndroidSerialConnection : ISerialConnection
     private bool _isOpen = false;
     public bool IsOpen => _isOpen;
 
+    public string? PortName { get; private set; } = null;
+
     public event EventHandler<EventArgs>? ConnectionCreated;
 
     public static List<string> ListPorts()
@@ -35,6 +37,7 @@ public class AndroidSerialConnection : ISerialConnection
 
     public void Connect(string portName)
     {
+        PortName = null; // will be defined at the end of InitSerialConnection
         var usbManager = (UsbManager?)Android.App.Application.Context.GetSystemService(Context.UsbService);
         var device = usbManager?.DeviceList?.Values.FirstOrDefault(d => d.DeviceName == portName);
 
@@ -132,6 +135,7 @@ public class AndroidSerialConnection : ISerialConnection
         _writeEndpoint = writeEndpoint;
 
         _usbDevice = device;
+        PortName = device.DeviceName;
     }
     
     public void SetDtrRts(bool dtr, bool rts)

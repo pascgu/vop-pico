@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using VopPico.App.Services;
 
 namespace VopPico.App.Pages
@@ -16,30 +15,20 @@ namespace VopPico.App.Pages
             HybridWebView.SetInvokeJavaScriptTarget(picoJsInterface);
         }
 
-        [JsonSourceGenerationOptions(WriteIndented = true)]
-        //[JsonSerializable(typeof(PicoJsInterface.ComputationResult))]
-        [JsonSerializable(typeof(double))]
-        [JsonSerializable(typeof(string))]
-        [JsonSerializable(typeof(Dictionary<string, string>))]
-        internal partial class VopHybridJSContext : JsonSerializerContext
-        {
-            // This type's attributes specify JSON serialization info to preserve type structure
-            // for trimmed builds.
-        }
 
         private void hybridWebView_RawMessageReceived(object sender, HybridWebViewRawMessageReceivedEventArgs e)
         {
             picoJsInterface.onHwvRawMessageReceived(sender, e);
         }
 
-        public async Task ExecuteVopFlow()
+        public async Task ExecuteVopFlowAsync()
         {
-            await picoJsInterface.ExecuteVopFlow();
+            await picoJsInterface.ExecuteVopFlowAsync();
         }
 
-        public async Task OnVopFlowExecutionError(string error)
+        public async Task OnVopFlowExecutionErrorAsync(string error)
         {
-            await picoJsInterface.OnVopFlowExecutionError(error);
+            await picoJsInterface.OnVopFlowExecutionErrorAsync(error);
         }
     }
 }

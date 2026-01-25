@@ -1,5 +1,4 @@
 using VopPico.App.Pages;
-using static VopPico.App.Pages.PicoPage;
 using VopPico.App.Models;
 using VopPico.App.Interfaces;
 
@@ -19,12 +18,12 @@ public class PicoJsInterface
         _picoPage = picoPage;
     }
 
-    public void SendCodeToDevice(string code)
+    public async Task SendCodeToDeviceAsync(string code)
     {
         try
         {
             // Handle the code sent from JavaScript
-            Console.WriteLine($"Received code: {code}");
+            Console.WriteLine($"Sending code to Pico: {code}");
 
             // Ajouter un retour à la ligne pour les commandes Python si ce n'est pas déjà fait
             if (!code.EndsWith("\r\n") && !code.EndsWith("\n"))
@@ -41,26 +40,29 @@ public class PicoJsInterface
             else
             {
                 Console.WriteLine("No serial connection available");
+                await SendLogMessageAsync("No serial connection available", LogMessageType.error);
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error sending code to device: {ex.Message}");
+            await SendLogMessageAsync($"Error sending code to device: {ex.Message}", LogMessageType.error);
         }
+        await Task.CompletedTask;
     }
 
-    public async Task<string> GetDeviceStatus()
+    public async Task<string> GetDeviceStatusAsync()
     {
         // Return the device status
         await Task.CompletedTask;
         return "Device is ready 2";
     }
 
-    public async Task JSeval()
+    public async Task JSevalAsync()
     {
         try
         {
-            await _picoPage.Dispatcher.DispatchAsync(async () =>
+            await Hwv.Dispatcher.DispatchAsync(async () =>
             {
                 await Hwv.EvaluateJavaScriptAsync("window.logMessage('JSeval: call logMessage from C# with eval');");
             });
@@ -68,14 +70,15 @@ public class PicoJsInterface
         catch (Exception ex)
         {
             Console.WriteLine($"Error in JSeval: {ex.Message}");
+            await SendLogMessageAsync($"Error in JSeval: {ex.Message}", LogMessageType.error);
         }
     }
 
-    public async Task JSinvoke()
+    public async Task JSinvokeAsync()
     {
         try
         {
-            await _picoPage.Dispatcher.DispatchAsync(async () =>
+            await Hwv.Dispatcher.DispatchAsync(async () =>
             {
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
                 await Hwv.InvokeJavaScriptAsync<object>(
@@ -90,14 +93,15 @@ public class PicoJsInterface
         catch (Exception ex)
         {
             Console.WriteLine($"Error in JSinvoke: {ex.Message}");
+            await SendLogMessageAsync($"Error in JSinvoke: {ex.Message}", LogMessageType.error);
         }
     }
 
-    public async Task JSraw()
+    public async Task JSrawAsync()
     {
         try
         {
-            await _picoPage.Dispatcher.DispatchAsync(() =>
+            await Hwv.Dispatcher.DispatchAsync(() =>
             {
                 Hwv.SendRawMessage($"JSraw : C# send a raw message");
             });
@@ -105,6 +109,7 @@ public class PicoJsInterface
         catch (Exception ex)
         {
             Console.WriteLine($"Error in JSraw: {ex.Message}");
+            await SendLogMessageAsync($"Error in JSraw: {ex.Message}", LogMessageType.error);
         }
     }
 
@@ -112,7 +117,7 @@ public class PicoJsInterface
     {
         try
         {
-            await _picoPage.Dispatcher.DispatchAsync(async () =>
+            await Hwv.Dispatcher.DispatchAsync(async () =>
             {
                 await _picoPage.DisplayAlert("Raw Message Received in C#", e.Message, "OK");
             });
@@ -120,6 +125,7 @@ public class PicoJsInterface
         catch (Exception ex)
         {
             Console.WriteLine($"Error in onHwvRawMessageReceived: {ex.Message}");
+            await SendLogMessageAsync($"Error in onHwvRawMessageReceived: {ex.Message}", LogMessageType.error);
         }
     }
 
@@ -163,7 +169,7 @@ public class PicoJsInterface
         }
     }
 
-    public async Task<string> OnLoadingVopFlow(string vopFlowJson)
+    public async Task<string> OnLoadingVopFlowAsync(string vopFlowJson)
     {
         if (!ValidateVopFlow(vopFlowJson, out VopFlow? vopFlow, out string errorMessage))
         {
@@ -186,11 +192,11 @@ public class PicoJsInterface
         catch (Exception ex)
         {
             Console.WriteLine($"Error in OnLoadingVopFlow: {ex.Message}");
-            return $"Error processing VopFlow data: {ex.Message}";
+            return $"Error processing VopFlow data while loading: {ex.Message}";
         }
     }
 
-    public async Task<string> OnSavingVopFlow(string vopFlowJson)
+    public async Task<string> OnSavingVopFlowAsync(string vopFlowJson)
     {
         if (!ValidateVopFlow(vopFlowJson, out VopFlow? vopFlow, out string errorMessage))
         {
@@ -213,25 +219,25 @@ public class PicoJsInterface
         catch (Exception ex)
         {
             Console.WriteLine($"Error in OnSavingVopFlow: {ex.Message}");
-            return $"Error processing VopFlow data: {ex.Message}";
+            return $"Error processing VopFlow data while saving: {ex.Message}";
         }
     }
 
-    public async Task ExecuteVopFlow()
+    public async Task ExecuteVopFlowAsync()
     {
         // Implement the logic to execute the current VopFlow
         Console.WriteLine("Executing VopFlow");
         await Task.CompletedTask;
     }
 
-    public async Task OnVopFlowExecutionError(string error)
+    public async Task OnVopFlowExecutionErrorAsync(string error)
     {
         // Implement the logic to handle errors during VopFlow execution
         Console.WriteLine($"VopFlow execution error: {error}");
         await Task.CompletedTask;
     }
 
-    public async Task<List<string>> ListSerialPorts()
+    public async Task<List<string>> ListSerialPortsAsync()
     {
         var currentPorts = new List<string>();
         var resultPorts = new List<string>();
@@ -247,10 +253,14 @@ public class PicoJsInterface
                 currentPorts.Add(port);
                 resultPorts.Add($"{port}{portDetails}");
             }
+            Console.WriteLine($"Serial ports: {string.Join(", ", resultPorts)}");
+            if (resultPorts.Count == 0)
+                await SendLogMessageAsync("No port found", LogMessageType.warning);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error listing serial ports: {ex.Message}");
+            await SendLogMessageAsync($"Error listing serial ports: {ex.Message}", LogMessageType.error);
         }
 
         previousPorts = currentPorts;
@@ -258,59 +268,70 @@ public class PicoJsInterface
         return resultPorts;
     }
 
-    public async Task<string> SelectSerialPort(string portName)
+    public async Task<string> SelectSerialPortAsync(string portName)
     {
         try
         {
             Console.WriteLine($"Selected serial port: {portName}");
 
             // Close actual Serial connection if opened
-            CloseSerialConnection();
+            await CloseSerialConnectionAsync();
+
+            if (string.IsNullOrEmpty(portName))
+                return ""; // Return empty string if no port is selected
 
             // Create new Serial connection
             _serialConnection = SerialConnectionFactory.Create();
             _serialConnection.ConnectionCreated += OnSerialConnectionCreated;
             _serialConnection.Connect(portName);
 
-            await Task.CompletedTask;
             return portName;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error selecting serial port: {ex.Message}");
-            SendLogMessage($"Error selecting serial port: {ex.Message}", LogMessageType.error);
-            SendLogMessage($"Stack trace: {ex.StackTrace}", LogMessageType.error);
+            await SendLogMessageAsync($"Error selecting serial port: {ex.Message}", LogMessageType.error);
+            await SendLogMessageAsync($"Stack trace: {ex.StackTrace}", LogMessageType.error);
             return "";
         }
     }
 
-    private void OnSerialConnectionCreated(object? sender, EventArgs e)
+    private async void OnSerialConnectionCreated(object? sender, EventArgs e)
     {
+        if (_serialConnection != null)
+            _serialConnection.ConnectionCreated -= OnSerialConnectionCreated;
         try
         {
+            Console.WriteLine("Serial connection created");
             StartSerialMonitoring();
-            SendCodeToDevice("print('Pico connected to VoP')");
+            await SendLogMessageAsync($"Port connected: {_serialConnection?.PortName}");
+            await SendCodeToDeviceAsync("print('Pico connected to VoP')");
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error in OnSerialConnectionCreated: {ex.Message}");
-            SendLogMessage($"Error in OnSerialConnectionCreated: {ex.Message}", LogMessageType.error);
+            await SendLogMessageAsync($"Error in OnSerialConnectionCreated: {ex.Message}", LogMessageType.error);
         }
     }
 
-    public void CloseSerialConnection()
+    public async Task CloseSerialConnectionAsync()
     {
         try
         {
             _cts?.Cancel();
             _cts?.Dispose();
             _cts = null;
-            _serialConnection?.Close();
-            _serialConnection = null;
+            if (_serialConnection != null)
+            {
+                _serialConnection.ConnectionCreated -= OnSerialConnectionCreated;
+                _serialConnection.Close();
+                _serialConnection = null;
+            }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"CloseSerialConnection error : {ex.Message}");
+            await SendLogMessageAsync($"CloseSerialConnection error : {ex.Message}", LogMessageType.warning);
         }
     }
 
@@ -347,7 +368,7 @@ public class PicoJsInterface
                             if (!string.IsNullOrEmpty(cleanLine))
                             {
                                 // send data to frontend
-                                SendDataReceived(cleanLine);
+                                await SendDataReceivedAsync(cleanLine);
                             }
 
                             // Remove the processed line from the buffer
@@ -357,7 +378,7 @@ public class PicoJsInterface
                         // Manage specific MicroPython REPL prompt (without \n)
                         if (_receiveBuffer == ">>> ")
                         {
-                            SendDataReceived(_receiveBuffer);
+                            await SendDataReceivedAsync(_receiveBuffer);
                             _receiveBuffer = string.Empty;
                         }
                     }
@@ -370,39 +391,17 @@ public class PicoJsInterface
             catch (Exception ex)
             {
                 Console.WriteLine($"Error monitoring serial messages: {ex.Message}");
-                SendLogMessage($"Error monitoring serial connection: {ex.Message}", LogMessageType.error);
-                SendLogMessage($"Stack trace: {ex.StackTrace}", LogMessageType.error);
+                await SendLogMessageAsync($"Error monitoring serial connection: {ex.Message}", LogMessageType.error);
+                await SendLogMessageAsync($"Stack trace: {ex.StackTrace}", LogMessageType.error);
             }
         }, token);
     }
 
-    private void SendDataReceived(string message, LogMessageType? type = LogMessageType.code)
+    private async Task SendDataReceivedAsync(string message, LogMessageType? type = LogMessageType.code)
     {
         try
         {
-            _picoPage.Dispatcher.DispatchAsync(async () =>
-            {
-                Console.WriteLine($"Sending data received to JS: {message}");
-                string encodedMessage = message;
-#if !ANDROID
-                encodedMessage = HttpUtility.JavaScriptStringEncode(message);
-#endif
-                try
-                {
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-                    await Hwv.InvokeJavaScriptAsync<object>(
-                        "window.vopHost.receiveDataFromDevice",
-                        null, // use it if no return type (void)
-                        [encodedMessage, type?.ToString()],
-                        [VopHybridJSContext.Default.String, VopHybridJSContext.Default.String]
-                    );
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error sending data received InvokeJavaScriptAsync: {ex.Message}");
-                }
-            });
+            await JsTools.InvokeJsAsync(Hwv, "window.vopHost.receiveDataFromDevice", message, type?.ToString());
         }
         catch (Exception ex)
         {
@@ -410,26 +409,11 @@ public class PicoJsInterface
         }
     }
 
-    private void SendLogMessage(string message, LogMessageType? type = null)
+    private async Task SendLogMessageAsync(string message, LogMessageType? type = null)
     {
         try
         {
-            _picoPage.Dispatcher.DispatchAsync(async () =>
-            {
-                Console.WriteLine($"Sending log message to JS: {message}");
-                string encodedMessage = message;
-#if !ANDROID
-                encodedMessage = HttpUtility.JavaScriptStringEncode(message);
-#endif
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-                await Hwv.InvokeJavaScriptAsync<object>(
-                    "window.logMessage",
-                    null, // use it if no return type (void)
-                    [encodedMessage, type?.ToString()],
-                    [VopHybridJSContext.Default.String, VopHybridJSContext.Default.String]
-                );
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
-            });
+            await JsTools.InvokeJsAsync(Hwv, "window.logMessage", message, type?.ToString());
         }
         catch (Exception ex)
         {

@@ -10,6 +10,7 @@ public class WindowsSerialConnection : ISerialConnection
 
     public event EventHandler<EventArgs>? ConnectionCreated;
     public bool IsOpen => _serialPort?.IsOpen ?? _isOpen;
+    public string? PortName => _serialPort?.PortName;
     
     public static List<string> ListPorts()
     {

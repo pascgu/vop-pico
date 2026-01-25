@@ -1,7 +1,7 @@
 
 namespace VopPico.App.Models;
 
-enum LogMessageType {
+public enum LogMessageType {
     error,
     warning,
     code
