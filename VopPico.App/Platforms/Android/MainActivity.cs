@@ -28,27 +28,21 @@ public class MainActivity : MauiAppCompatActivity
         filter.AddAction(UsbManager.ActionUsbDeviceAttached);
         filter.AddAction(UsbManager.ActionUsbDeviceDetached);
         filter.AddAction(ACTION_USB_PERMISSION);
-        if (Build.VERSION.SdkInt >= (BuildVersionCodes)34) // Android 14+ (API 34)
+        if (OperatingSystem.IsAndroidVersionAtLeast(34))
         {
             // Use RECEIVER_EXPORTED because the system must be able to send the permission intent to this receiver.
-#pragma warning disable CA1416 // Validate platform compatibility
             RegisterReceiver(_usbReceiver, filter, ReceiverFlags.Exported);
-#pragma warning restore CA1416 // Validate platform compatibility
         }
         else
-        {
             RegisterReceiver(_usbReceiver, filter);
-        }
 
         // Get the UsbManager service
         _usbManager = (UsbManager?)GetSystemService(UsbService);
         // Create a PendingIntent for USB permission requests
         PendingIntentFlags flags = PendingIntentFlags.UpdateCurrent;
-        if (Build.VERSION.SdkInt >= BuildVersionCodes.S) // v31
+        if (OperatingSystem.IsAndroidVersionAtLeast(31))
         {
-#pragma warning disable CA1416 // Validate platform compatibility
             flags = PendingIntentFlags.Mutable;
-#pragma warning restore CA1416 // Validate platform compatibility
         }
         Intent intent = new Intent(ACTION_USB_PERMISSION);
         intent.SetPackage(PackageName); // explicit intent to only sent to this app
@@ -134,17 +128,13 @@ public class UsbReceiver : BroadcastReceiver
                 // Handle USB permission
                 string extra_device = UsbManager.ExtraDevice;
                 UsbDevice? device;
-                if (Build.VERSION.SdkInt >= (BuildVersionCodes)33)
+                if (OperatingSystem.IsAndroidVersionAtLeast(33))
                 {
-    #pragma warning disable CA1416 // Validate platform compatibility
                     device = intent.GetParcelableExtra(extra_device, Java.Lang.Class.FromType(typeof(UsbDevice))) as UsbDevice;
-    #pragma warning restore CA1416
                 }
                 else
                 {
-    #pragma warning disable CA1422 // Validate platform compatibility
                     device = intent.GetParcelableExtra(extra_device) as UsbDevice;
-    #pragma warning restore CA1422
                 }
                 if (device != null)
                 {

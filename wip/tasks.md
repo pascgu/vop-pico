@@ -16,7 +16,7 @@
 3. ✅ logMessage issue when sending multiple messages at once, Python-side error case
 4. ✅ if working, rewrite platform-agnostic class/functions (decorator?) and remove #if ANDROID as much as possible
 5. ✅ handle encodedMessage by platform, apparently different across platforms, so create interface and platform-specific implementation. => no finally create a common static JsTools class that keep #if ANDROID but only for that file
-6. replace if android version >= XX with #if ANDROID_GT_XX and remove some #pragma needed to ignore linter warning
+6. ✅ replace if android version >= XX with #if ANDROID_GT_XX and remove some #pragma needed to ignore linter warning
 7. if only 1 device found in the list, connect automatically
 8. add a button to quit properly the MAUI application (check it on both windows and android)
 9. on Android, can we use UsbReceiver and know when a device is connected/disconnected to update the device list?
