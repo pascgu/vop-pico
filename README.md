@@ -17,3 +17,7 @@ A MAUI application with HybridWebView to program and control a Raspberry Pi Pico
 ## copy frontend from vop-core
 
 in vop-pico dir: `copy-frontend.bat`
+
+## for AI agents
+
+see AGENTS.md
