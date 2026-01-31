@@ -237,6 +237,26 @@ public class PicoJsInterface
         await Task.CompletedTask;
     }
 
+    public async Task QuitApplicationAsync()
+    {
+        try
+        {
+            Console.WriteLine("Quitting application...");
+            await SendLogMessageAsync("Quitting application...", LogMessageType.warning);
+
+            // Close serial connection first if open
+            await CloseSerialConnectionAsync();
+
+            // Use the platform-specific ApplicationFactory to handle quit properly
+            ApplicationFactory.Quit();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error quitting application: {ex.Message}");
+            await SendLogMessageAsync($"Error quitting application: {ex.Message}", LogMessageType.error);
+        }
+    }
+
     public async Task<List<string>> ListSerialPortsAsync()
     {
         var currentPorts = new List<string>();

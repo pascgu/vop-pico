@@ -169,12 +169,17 @@ The `wip/tasks.md` file is used to track ongoing tasks:
    - Respect existing structure
    - Use `.cs` extension for C# code and `.ts`/`.tsx` for TypeScript
 
-4. **Documentation**:
+4. **Platform-specific code organization**:
+   - For simple platform-specific functionality, use static factory classes in the `Interfaces` directory (like `SerialConnectionFactory.cs` or `ApplicationFactory.cs`)
+   - Use `#if ANDROID`/`#if WINDOWS` directives within these factory classes rather than creating separate interfaces and implementations (only if the functionnality is simple, for more complex functionality, use the factory pattern with interfaces and implementations, like the ISerialConnection example)
+   - This approach keeps platform-specific code centralized and follows the existing pattern in the codebase
+
+5. **Documentation**:
    - Add comments for complex code
    - Update existing documentation if necessary
    - Use code examples in comments
 
-5. **Testing**:
+6. **Testing**:
    - Verify code compiles before committing
    - Test features on target platforms
    - Document use cases
