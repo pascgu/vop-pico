@@ -300,8 +300,8 @@ public class PicoJsInterface
             if (string.IsNullOrEmpty(portName))
                 return ""; // Return empty string if no port is selected
 
-            // Create new Serial connection
-            _serialConnection = SerialConnectionFactory.Create();
+            // Create new Serial connection with HybridWebView
+            _serialConnection = SerialConnectionFactory.Create(Hwv);
             _serialConnection.ConnectionCreated += OnSerialConnectionCreated;
             _serialConnection.Connect(portName);
 

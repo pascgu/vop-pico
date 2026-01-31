@@ -4,12 +4,12 @@ namespace VopPico.App.Interfaces;
 
 public static class SerialConnectionFactory
 {
-    public static ISerialConnection Create()
+    public static ISerialConnection Create(HybridWebView? hwv = null)
     {
 #if ANDROID
-        return new AndroidSerialConnection();
+        return new AndroidSerialConnection(hwv);
 #elif WINDOWS
-        return new WindowsSerialConnection();
+        return new WindowsSerialConnection(hwv);
 #else
         throw new PlatformNotSupportedException();
 #endif

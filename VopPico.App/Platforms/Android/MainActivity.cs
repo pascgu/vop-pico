@@ -7,8 +7,6 @@ using Android.OS;
 namespace VopPico.App;
 
 [Activity(Theme = "@style/Maui.SplashTheme", MainLauncher = true, LaunchMode = LaunchMode.SingleTop, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize | ConfigChanges.Density)]
-[IntentFilter(new[] { "android.hardware.usb.action.USB_DEVICE_ATTACHED" })]
-[MetaData("android.hardware.usb.action.USB_DEVICE_ATTACHED", Resource = "@xml/device_filter")]
 public class MainActivity : MauiAppCompatActivity
 {
     private UsbReceiver _usbReceiver = new UsbReceiver();
@@ -25,8 +23,6 @@ public class MainActivity : MauiAppCompatActivity
 
         // Register the BroadcastReceiver
         var filter = new IntentFilter();
-        filter.AddAction(UsbManager.ActionUsbDeviceAttached);
-        filter.AddAction(UsbManager.ActionUsbDeviceDetached);
         filter.AddAction(ACTION_USB_PERMISSION);
         if (OperatingSystem.IsAndroidVersionAtLeast(34))
         {
@@ -99,7 +95,6 @@ public class MainActivity : MauiAppCompatActivity
 }
 
 [BroadcastReceiver(Enabled = true, Exported = true)]
-[IntentFilter(new[] { UsbManager.ActionUsbDeviceAttached, UsbManager.ActionUsbDeviceDetached })]
 [IntentFilter(new[] { MainActivity.ACTION_USB_PERMISSION })]
 [MetaData(MainActivity.ACTION_USB_PERMISSION, Resource = "@xml/device_filter")]
 public class UsbReceiver : BroadcastReceiver
@@ -108,16 +103,6 @@ public class UsbReceiver : BroadcastReceiver
     {
         if (intent == null)
             return;
-        if (intent.Action == UsbManager.ActionUsbDeviceAttached)
-        {
-            // Handle USB device attached
-            Console.WriteLine($"USB device attached");
-        }
-        else if (intent.Action == UsbManager.ActionUsbDeviceDetached)
-        {
-            // Handle USB device detached
-            Console.WriteLine($"USB device detached");
-        }
         else if (intent.Action == MainActivity.ACTION_USB_PERMISSION)
         {
             Console.WriteLine($"USB_PERMISSION intent received");

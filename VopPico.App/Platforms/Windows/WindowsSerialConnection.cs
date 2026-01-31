@@ -7,14 +7,25 @@ public class WindowsSerialConnection : ISerialConnection
 {
     private SerialPort? _serialPort;
     private bool _isOpen = false;
+    private HybridWebView? _hwv;
 
     public event EventHandler<EventArgs>? ConnectionCreated;
     public bool IsOpen => _serialPort?.IsOpen ?? _isOpen;
     public string? PortName => _serialPort?.PortName;
+    public HybridWebView? Hwv
+    {
+        get => _hwv;
+        set => _hwv = value;
+    }
     
     public static List<string> ListPorts()
     {
         return SerialPort.GetPortNames().ToList();
+    }
+
+    public WindowsSerialConnection(HybridWebView? hwv = null)
+    {
+        Hwv = hwv;
     }
 
     public void Connect(string portName)

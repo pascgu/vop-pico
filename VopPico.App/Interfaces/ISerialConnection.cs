@@ -6,6 +6,7 @@ public interface ISerialConnection
     static abstract List<string> ListPorts();
     bool IsOpen { get; }
     string? PortName { get; }
+    HybridWebView? Hwv { get; set; }
     void Connect(string portName);
     void Write(string data);
     string? Read();

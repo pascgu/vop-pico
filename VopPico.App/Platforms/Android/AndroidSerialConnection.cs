@@ -13,6 +13,7 @@ public class AndroidSerialConnection : ISerialConnection
     private UsbEndpoint? _readEndpoint;
     private UsbEndpoint? _writeEndpoint;
     private UsbDevice? _usbDevice;
+    private HybridWebView? _hwv;
 
     public int ReadTimeout { get; set; } = 1000; // Default timeout in milliseconds
     public int WriteTimeout { get; set; } = 1000; // Default timeout in milliseconds
@@ -21,6 +22,11 @@ public class AndroidSerialConnection : ISerialConnection
     public bool IsOpen => _isOpen;
 
     public string? PortName { get; private set; } = null;
+    public HybridWebView? Hwv
+    {
+        get => _hwv;
+        set => _hwv = value;
+    }
 
     public event EventHandler<EventArgs>? ConnectionCreated;
 
@@ -31,8 +37,9 @@ public class AndroidSerialConnection : ISerialConnection
         return deviceList?.Values.Select(d => d.DeviceName).ToList() ?? new List<string>();
     }
 
-    public AndroidSerialConnection()
+    public AndroidSerialConnection(HybridWebView? hwv = null)
     {
+        Hwv = hwv;
     }
 
     public void Connect(string portName)
@@ -188,4 +195,5 @@ public class AndroidSerialConnection : ISerialConnection
         _usbConnection = null;
         _isOpen = false;
     }
+
 }
