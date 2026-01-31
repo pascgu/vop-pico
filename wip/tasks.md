@@ -16,13 +16,14 @@
 3. ✅ logMessage issue when sending multiple messages at once, Python-side error case
 4. ✅ if working, rewrite platform-agnostic class/functions (decorator?) and remove #if ANDROID as much as possible
 5. ✅ handle encodedMessage by platform, apparently different across platforms, so create interface and platform-specific implementation. => no finally create a common static JsTools class that keep #if ANDROID but only for that file
-6. if only 1 device found in the list, connect automatically
-7. add a button to quit properly the MAUI application (check it on both windows and android)
-8. on Android, can we use UsbReceiver and know when a device is connected/disconnected to update the device list?
-9. when plugging in the pico, it asks to open the app directly, it would be good if it directly connects to the newly plugged-in device
-10. Convert VopFlow to MicroPython commands.
-11. Execute commands via USB.
-12. Validate MicroPython code generation and sending to Pico.
+6. replace if android version >= XX with #if ANDROID_GT_XX and remove some #pragma needed to ignore linter warning
+7. if only 1 device found in the list, connect automatically
+8. add a button to quit properly the MAUI application (check it on both windows and android)
+9. on Android, can we use UsbReceiver and know when a device is connected/disconnected to update the device list?
+10. when plugging in the pico, it asks to open the app directly, it would be good if it directly connects to the newly plugged-in device
+11. Convert VopFlow to MicroPython commands.
+12. Execute commands via USB.
+13. Validate MicroPython code generation and sending to Pico.
 
 ## Phase 5: MAF Backend Implementation (Business Logic)
 *Objective: Set up the execution engine and tracing.*
