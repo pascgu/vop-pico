@@ -1,174 +1,184 @@
 {
   "version": "1.0",
   "name": "Test Blink VopFlow",
+  "metadata": {
+    "author": "Test",
+    "createdAt": "2026-01-08T16:06:17Z",
+    "updatedAt": "2026-01-08T16:06:17Z"
+  },
   "nodes": [
     {
-      "id": "import1",
+      "id": "import_machine",
       "type": "import",
-      "position": {
-        "x": 132.16355393991697,
-        "y": -43.04456675475984
-      },
+      "position": { "x": 132, "y": -43 },
       "data": {
-        "label": "import machine.Pin"
-      },
-      "properties": {
-        "module": "machine.Pin"
+        "module": "machine",
+        "symbols": ["Pin"],
+        "alias": null,
+        "properties": {
+          "label": "import machine"
+        }
       }
     },
     {
-      "id": "import2",
+      "id": "import_time",
       "type": "import",
-      "position": {
-        "x": 132.163553939917,
-        "y": 5.8067348902431135
-      },
+      "position": { "x": 132, "y": 5 },
       "data": {
-        "label": "import time"
-      },
-      "properties": {
-        "module": "time"
+        "module": "time",
+        "symbols": ["sleep"],
+        "alias": null,
+        "properties": {
+          "label": "import time"
+        }
       }
     },
     {
-      "id": "Start",
+      "id": "start",
       "type": "start",
-      "position": {
-        "x": 360.88101281484285,
-        "y": -36.69510424464719
-      },
+      "position": { "x": 360, "y": -36 },
       "data": {
-        "label": "Start"
-      },
-      "properties": {}
-    },
-    {
-      "id": "Pin",
-      "type": "machine.Pin.__init__",
-      "position": {
-        "x": 361.00749904535877,
-        "y": 20.739813505204573
-      },
-      "data": {
-        "label": "Pin"
-      },
-      "properties": {
-        "pin": "LED",
-        "mode": "Pin.OUT"
+        "properties": {
+          "label": "Start"
+        }
       }
     },
     {
-      "id": "toggle",
-      "type": "machine.Pin.toggle",
-      "position": {
-        "x": 361.1339852758746,
-        "y": 98.85130164500296
-      },
+      "id": "pin_init",
+      "type": "function_call",
+      "position": { "x": 361, "y": 20 },
       "data": {
-        "label": "toggle"
-      },
-      "properties": {}
-    },
-    {
-      "id": "sleep",
-      "type": "time.sleep",
-      "position": {
-        "x": 361.2604715063905,
-        "y": 157.43491774985176
-      },
-      "data": {
-        "label": "sleep"
-      },
-      "properties": {
-        "duration": 0.5
+        "prototype": "machine.Pin.__init__",
+        "inputs": [
+          { "id": "pin", "type": "str", "value": "LED" },
+          { "id": "mode", "type": "str", "value": "Pin.OUT" }
+        ],
+        "outputs": [
+          { "id": "led_instance", "type": "machine.Pin" }
+        ],
+        "properties": {
+          "label": "Pin Init"
+        }
       }
     },
     {
-      "id": "for",
-      "type": "for",
-      "position": {
-        "x": 463.62111133164245,
-        "y": 221.7620256296857
-      },
+      "id": "toggle_led",
+      "type": "method_call",
+      "position": { "x": 361, "y": 98 },
       "data": {
-        "label": "for"
-      },
-      "properties": {}
+        "target": "led_instance",
+        "method": "toggle",
+        "properties": {
+          "label": "Toggle LED"
+        }
+      }
     },
     {
-      "id": "range",
-      "type": "range",
-      "position": {
-        "x": 534.8404093414589,
-        "y": 157.69769213369437
-      },
+      "id": "sleep_call",
+      "type": "function_call",
+      "position": { "x": 361, "y": 157 },
       "data": {
-        "label": "range"
-      },
-      "properties": {
-        "count": 20
+        "prototype": "time.sleep",
+        "inputs": [
+          { "id": "duration", "type": "int|float", "value": 0.5 }
+        ],
+        "properties": {
+          "label": "Sleep"
+        }
+      }
+    },
+    {
+      "id": "range_node",
+      "type": "function_call",
+      "position": { "x": 534, "y": 157 },
+      "data": {
+        "prototype": "builtins.range",
+        "inputs": [
+          { "id": "stop", "type": "int", "value": 20 }
+        ],
+        "outputs": [
+          { "id": "range_iter", "type": "range" }
+        ],
+        "properties": {
+          "label": "Range"
+        }
+      }
+    },
+    {
+      "id": "for_loop",
+      "type": "loop",
+      "position": { "x": 463, "y": 221 },
+      "data": {
+        "loop_type": "for",
+        "inputs": [
+          { "id": "iterator", "type": "range" }
+        ],
+        "properties": {
+          "label": "Loop"
+        }
       }
     }
   ],
   "edges": [
     {
-      "id": "e1-2",
-      "source": "Start",
-      "target": "Pin",
+      "id": "start-to-pin",
+      "source": "start",
+      "target": "pin_init",
+      "type": "flow",
       "animated": false,
-      "type": "default",
-      "label": "",
-      "metadata": {}
+      "data": {
+        "label": ""
+      }
     },
     {
-      "id": "e2-3",
-      "source": "Pin",
-      "target": "toggle",
+      "id": "pin-to-toggle",
+      "source": "pin_init",
+      "target": "toggle_led",
+      "type": "flow",
       "animated": false,
-      "type": "default",
-      "label": "",
-      "metadata": {}
+      "data": {
+        "label": ""
+      }
     },
     {
-      "id": "e3-4",
-      "source": "toggle",
-      "target": "sleep",
+      "id": "toggle-to-sleep",
+      "source": "toggle_led",
+      "target": "sleep_call",
+      "type": "flow",
       "animated": false,
-      "type": "default",
-      "label": "",
-      "metadata": {}
+      "data": {
+        "label": ""
+      }
     },
     {
-      "id": "e7-5",
-      "source": "range",
-      "target": "for",
+      "id": "sleep-to-loop",
+      "source": "sleep_call",
+      "target": "for_loop",
+      "type": "flow",
       "animated": false,
-      "type": "default",
-      "label": "",
-      "metadata": {}
+      "data": {
+        "label": ""
+      }
     },
     {
-      "id": "reactflow__edge-sleep-for",
-      "source": "sleep",
-      "target": "for",
+      "id": "range-to-loop",
+      "source": "range_node.range_iter",
+      "target": "for_loop.iterator",
+      "type": "data",
       "animated": false,
-      "type": "default",
-      "label": "",
-      "metadata": {}
+      "data": {
+        "label": "iterator"
+      }
     },
     {
-      "id": "reactflow__edge-for-toggle",
-      "source": "for",
-      "target": "toggle",
+      "id": "loop-back-to-toggle",
+      "source": "for_loop",
+      "target": "toggle_led",
+      "type": "flow",
       "animated": false,
-      "type": "default",
-      "label": "",
-      "metadata": {}
+      "data": {
+        "label": ""
+      }
     }
-  ],
-  "metadata": {
-    "author": "Test",
-    "createdAt": "2026-01-08T16:06:17Z",
-    "updatedAt": "2026-01-08T16:06:17Z"
-  }
+  ]
 }
