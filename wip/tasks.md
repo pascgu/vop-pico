@@ -19,11 +19,12 @@
 6. ✅ replace if android version >= XX with #if ANDROID_GT_XX and remove some #pragma needed to ignore linter warning
 7. ✅ if only 1 device found in the list, connect automatically
 8. ✅ add a button to quit properly the MAUI application (check it on both windows and android)
-9. on Android, can we use UsbReceiver and know when a device is connected/disconnected to update the device list?
-10. when plugging in the pico, it asks to open the app directly, it would be good if it directly connects to the newly plugged-in device
+9. ✅ Review the .json file structure and ensure it's compatible with the MicroPython code generation process.
+10. Create VopFlowToMicroPythonConverter service to convert VopFlow JSON to executable MicroPython code.
 11. Convert VopFlow to MicroPython commands.
 12. Execute commands via USB.
 13. Validate MicroPython code generation and sending to Pico.
+14. Add button to stop current program : send Ctrl+C "\x03"
 
 ## Phase 5: UI Enhancement and Visual Design Improvements
 *Objective: Redesign and improve the user interface, node layout, and overall visual experience.*
@@ -59,7 +60,9 @@
 3. Performance tests on Android.
 
 ## Phase 9: Advanced Features
-1. Add WiFi/MQTT support.
-2. Implement visualization of Pico sensor data.
-3. Add logic for automatic node connection
-4. Enhance UI: Add node search/filtering, grouping, collapsible sections, and annotation systems, context menus, and improve touch support.
+1. Implement Save as file (.py) by sending the content in REPL Raw mode (Ctrl+A: "\x01" ), then content, then Ctrl+D: "\x04" to finish transfer and execute on the Pico. To write the .py file, use this wrapper: f = open('my_filename.py', 'w') ; f.write('''filename_content_here''') ; f.close()
+In REPL Raw mode, the content should be sent in chunks of 64-128 bytes. For errors, read the results after the \x04 (should be 2 OK).
+2. Add WiFi/MQTT support.
+3. Implement visualization of Pico sensor data.
+4. Add logic for automatic node connection
+5. Enhance UI: Add node search/filtering, grouping, collapsible sections, and annotation systems, context menus, and improve touch support.
