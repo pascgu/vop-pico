@@ -5,7 +5,7 @@
       "name": ".NET MAUI",
       "type": "maui",
       "request": "launch",
-      "preLaunchTask": "build-front&cp&build-maui"
+      "preLaunchTask": "build-front&cp&build-maui",
     }
   ]
 }
