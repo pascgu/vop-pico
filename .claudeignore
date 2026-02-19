@@ -1,0 +1,70 @@
+# Environment variables and secrets
+.env
+.env.*
+.envrc
+*.env
+env.local
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# API Keys and credentials
+**/secrets/**
+**/credentials/**
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*.jks
+*secret*
+*credential*
+*password*
+config/secrets.yml
+config/master.key
+
+# Cloud provider credentials
+.aws/credentials
+.aws/config
+.azure/credentials
+.gcloud/**
+gcloud-service-key.json
+google-credentials.json
+service-account*.json
+
+# SSH and GPG keys
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+*.ppk
+*.asc
+known_hosts
+
+# Database credentials
+database.yml
+*.sql.local
+.pgpass
+my.cnf
+
+# Docker secrets
+docker-compose.override.yml
+.dockerignore
+
+# CI/CD secrets
+.gitlab-ci-local.yml
+.circleci/local.yml
+
+# Mobile app secrets (Android/iOS)
+google-services.json
+GoogleService-Info.plist
+keystore.properties
+
+# Other sensitive files
+*.crt
+*.cer
+*.der
+.htpasswd
+.netrc
+authinfo

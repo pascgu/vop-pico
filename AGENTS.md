@@ -184,6 +184,19 @@ The `wip/tasks.md` file is used to track ongoing tasks:
    - Test features on target platforms
    - Document use cases
 
+7. **Security and Sensitive Files**:
+   - **IMPORTANT**: The `.claudeignore` file at the root of this project contains patterns for sensitive files (API keys, credentials, environment variables, etc.)
+   - **All AI agents** (not just Claude Code) MUST respect this file and NEVER read, analyze, or display the contents of files matching these patterns
+   - Common sensitive files include:
+     - `.env` and environment variable files
+     - Cloud provider credentials (AWS, Azure, GCP)
+     - SSH/GPG keys (`.pem`, `.key`, `id_rsa`, etc.)
+     - Database credentials
+     - API keys and tokens
+     - Mobile app configuration files (`google-services.json`, `GoogleService-Info.plist`)
+   - If you need to reference a sensitive file pattern, refer to `.claudeignore` for the complete list
+   - Never suggest committing or sharing these files
+
 ## 📚 Useful Resources
 
 ### Documentation
@@ -241,5 +254,5 @@ For any questions or issues, consult the following files:
 
 ---
 
-**Last update**: 01/31/2026
-**Version**: 1.0
+**Last update**: 02/19/2026
+**Version**: 1.1

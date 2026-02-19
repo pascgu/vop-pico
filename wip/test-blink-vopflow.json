@@ -1,6 +1,11 @@
 {
-  "version": "1.0",
-  "name": "Test Blink VopFlow",
+  "version": "1.2",
+  "name": "Blink LED",
+  "metadata": {
+    "author": "VopFlow",
+    "createdAt": "2026-01-08T16:06:17Z",
+    "updatedAt": "2026-02-15T00:00:00Z"
+  },
   "nodes": [
     {
       "id": "import1",
@@ -10,9 +15,8 @@
         "y": -43.04456675475984
       },
       "data": {
-        "label": "import machine.Pin"
-      },
-      "properties": {
+        "label": "import machine.Pin",
+        "target": "micropython",
         "module": "machine.Pin"
       }
     },
@@ -24,9 +28,8 @@
         "y": 5.8067348902431135
       },
       "data": {
-        "label": "import time"
-      },
-      "properties": {
+        "label": "import time",
+        "target": "micropython",
         "module": "time"
       }
     },
@@ -39,74 +42,98 @@
       },
       "data": {
         "label": "Start"
-      },
-      "properties": {}
+      }
     },
     {
       "id": "Pin",
-      "type": "machine.Pin.__init__",
+      "type": "method-call",
       "position": {
         "x": 361.00749904535877,
         "y": 20.739813505204573
       },
       "data": {
-        "label": "Pin"
-      },
-      "properties": {
-        "pin": "LED",
-        "mode": "Pin.OUT"
+        "label": "Pin",
+        "target": "micropython",
+        "object": "machine",
+        "method": "Pin",
+        "inputs": {
+          "pin": { "default": "LED" },
+          "mode": { "default": "Pin.OUT" }
+        },
+        "output": { "name": "pin" }
       }
     },
     {
       "id": "toggle",
-      "type": "machine.Pin.toggle",
+      "type": "method-call",
       "position": {
         "x": 361.1339852758746,
         "y": 98.85130164500296
       },
       "data": {
-        "label": "toggle"
-      },
-      "properties": {}
+        "label": "toggle",
+        "target": "micropython",
+        "method": "toggle"
+      }
     },
     {
       "id": "sleep",
-      "type": "time.sleep",
+      "type": "function-call",
       "position": {
         "x": 361.2604715063905,
         "y": 157.43491774985176
       },
       "data": {
-        "label": "sleep"
-      },
-      "properties": {
-        "duration": 0.5
+        "label": "sleep",
+        "target": "micropython",
+        "function": "time.sleep",
+        "inputs": {
+          "duration": { "default": 0.5 }
+        }
       }
     },
     {
-      "id": "for",
-      "type": "for",
+      "id": "count-literal",
+      "type": "literal",
       "position": {
-        "x": 463.62111133164245,
-        "y": 221.7620256296857
+        "x": 534.8404093414589,
+        "y": 120.69769213369437
       },
       "data": {
-        "label": "for"
-      },
-      "properties": {}
+        "label": "20",
+        "value": 20,
+        "valueType": "integer"
+      }
     },
     {
       "id": "range",
-      "type": "range",
+      "type": "function-call",
       "position": {
         "x": 534.8404093414589,
         "y": 157.69769213369437
       },
       "data": {
-        "label": "range"
+        "label": "range",
+        "target": "micropython",
+        "function": "range",
+        "inputs": {
+          "count": { "default": 20 }
+        },
+        "output": { "name": "_range" }
+      }
+    },
+    {
+      "id": "for",
+      "type": "loop",
+      "position": {
+        "x": 463.62111133164245,
+        "y": 221.7620256296857
       },
-      "properties": {
-        "count": 20
+      "data": {
+        "label": "for",
+        "target": "micropython",
+        "loopType": "for",
+        "iterator": "i"
       }
     }
   ],
@@ -115,60 +142,97 @@
       "id": "e1-2",
       "source": "Start",
       "target": "Pin",
+      "sourceHandle": "control-out",
+      "targetHandle": "control-in",
       "animated": false,
-      "type": "default",
       "label": "",
-      "metadata": {}
+      "metadata": {
+        "flowType": "control-flow"
+      }
     },
     {
       "id": "e2-3",
       "source": "Pin",
       "target": "toggle",
+      "sourceHandle": "control-out",
+      "targetHandle": "control-in",
       "animated": false,
-      "type": "default",
       "label": "",
-      "metadata": {}
+      "metadata": {
+        "flowType": "control-flow"
+      }
+    },
+    {
+      "id": "e-pin-to-toggle-object",
+      "source": "Pin",
+      "target": "toggle",
+      "sourceHandle": "data-out",
+      "targetHandle": "data-in:object",
+      "animated": false,
+      "label": "",
+      "metadata": {
+        "flowType": "data-flow"
+      }
     },
     {
       "id": "e3-4",
       "source": "toggle",
       "target": "sleep",
+      "sourceHandle": "control-out",
+      "targetHandle": "control-in",
       "animated": false,
-      "type": "default",
       "label": "",
-      "metadata": {}
+      "metadata": {
+        "flowType": "control-flow"
+      }
+    },
+    {
+      "id": "e-count-to-range",
+      "source": "count-literal",
+      "target": "range",
+      "sourceHandle": "data-out",
+      "targetHandle": "data-in:count",
+      "animated": false,
+      "label": "",
+      "metadata": {
+        "flowType": "data-flow"
+      }
     },
     {
       "id": "e7-5",
       "source": "range",
       "target": "for",
+      "sourceHandle": "data-out",
+      "targetHandle": "data-in",
       "animated": false,
-      "type": "default",
       "label": "",
-      "metadata": {}
+      "metadata": {
+        "flowType": "data-flow"
+      }
     },
     {
-      "id": "reactflow__edge-sleep-for",
+      "id": "e-sleep-for",
       "source": "sleep",
       "target": "for",
+      "sourceHandle": "control-out",
+      "targetHandle": "control-in",
       "animated": false,
-      "type": "default",
       "label": "",
-      "metadata": {}
+      "metadata": {
+        "flowType": "control-flow"
+      }
     },
     {
-      "id": "reactflow__edge-for-toggle",
+      "id": "e-for-toggle",
       "source": "for",
       "target": "toggle",
+      "sourceHandle": "loop-back",
+      "targetHandle": "control-in",
       "animated": false,
-      "type": "default",
       "label": "",
-      "metadata": {}
+      "metadata": {
+        "flowType": "control-flow"
+      }
     }
-  ],
-  "metadata": {
-    "author": "Test",
-    "createdAt": "2026-01-08T16:06:17Z",
-    "updatedAt": "2026-01-08T16:06:17Z"
-  }
+  ]
 }
