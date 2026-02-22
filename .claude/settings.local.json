@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/hotma/source/repos/vop-core/**)",
+      "Read(//c/Users/hotma/source/repos/vop-pico/**)"
+    ]
+  }
+}
