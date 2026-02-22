@@ -19,11 +19,9 @@
 6. ✅ replace if android version >= XX with #if ANDROID_GT_XX and remove some #pragma needed to ignore linter warning
 7. ✅ if only 1 device found in the list, connect automatically
 8. ✅ add a button to quit properly the MAUI application (check it on both windows and android)
-9. on Android, can we use UsbReceiver and know when a device is connected/disconnected to update the device list?
-10. when plugging in the pico, it asks to open the app directly, it would be good if it directly connects to the newly plugged-in device
-11. Convert VopFlow to MicroPython commands.
-12. Execute commands via USB.
-13. Validate MicroPython code generation and sending to Pico.
+9. Convert VopFlow to MicroPython commands.
+10. Execute commands via USB.
+11. Validate MicroPython code generation and sending to Pico.
 
 ## Phase 5: UI Enhancement and Visual Design Improvements
 *Objective: Redesign and improve the user interface, node layout, and overall visual experience.*
